@@ -471,7 +471,45 @@ def create_store(
 
     return RedirectResponse(url="/?msg=created", status_code=303)
 
+# -------------------------
+# 口コミ追加（デモ用）
+# -------------------------
+@app.post("/reviews")
+def create_review(
+    store_id: int = Form(...),
+    reviewer_name: str = Form(...),
+    rating: int = Form(...),
+    comment: str = Form(...),
+    menu_name: str = Form(""),
+    staff_name: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    store = db.query(Store).filter(Store.id == store_id).first()
+    if not store:
+        return {"ok": False, "error": "store not found"}
 
+    review = Review(
+        store_id=store_id,
+        reviewer_name=reviewer_name,
+        rating=rating,
+        comment=comment,
+        menu_name=menu_name,
+        staff_name=staff_name,
+        reply_text=None,
+    )
+
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    return {
+        "ok": True,
+        "id": review.id,
+        "store_id": review.store_id,
+        "reviewer_name": review.reviewer_name,
+        "rating": review.rating,
+        "comment": review.comment,
+    }
 # -------------------------
 # HPBブログ取得
 # -------------------------
