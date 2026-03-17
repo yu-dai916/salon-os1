@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>HQ Dashboard</title>
+
+<style>
+body{
+  font-family:-apple-system;
+  padding:20px;
+}
+
+.badge{
+  padding:6px 14px;
+  border-radius:999px;
+  font-weight:bold;
+}
+
+.good{background:#e7ffe7;color:#0a0;}
+.warn{background:#fff6d6;color:#865b00;}
+.danger{background:#ffe5e5;color:#a00;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+td,th{
+  padding:10px;
+  border-bottom:1px solid #eee;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>本部 経営ダッシュボード</h2>
+
+<table>
+
+<tr>
+<th>店舗</th>
+<th>未返信</th>
+<th>下書き</th>
+<th>投稿停止日数</th>
+<th>危険度</th>
+</tr>
+
+{% for row in store_scores %}
+<tr>
+
+<td>{{ row.store.name }}</td>
+
+<td>{{ row.unreplied }}</td>
+
+<td>{{ row.drafts }}</td>
+
+<td>{{ row.inactive_days }}日</td>
+
+<td>
+{% if row.level == "danger" %}
+<span class="badge danger">🔴 危険</span>
+{% elif row.level == "warn" %}
+<span class="badge warn">🟡 要注意</span>
+{% else %}
+<span class="badge good">🟢 良好</span>
+{% endif %}
+</td>
+
+</tr>
+{% endfor %}
+
+</table>
+
+<br>
+<a href="/">← 戻る</a>
+
+</body>
+</html>

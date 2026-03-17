@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>店舗ランキング</title>
+
+<style>
+
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI";
+padding:20px;
+background:#f5f6fa;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:10px;
+}
+
+.rank{
+font-size:20px;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>店舗ランキング</h1>
+
+{% for r in data %}
+
+<div class="card">
+
+<div class="rank">{{ loop.index }}位 {{ r.store }}</div>
+
+口コミ {{ r.reviews }}  
+投稿 {{ r.posts }}  
+スコア {{ r.score }}
+
+</div>
+
+{% endfor %}
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Coupons</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 16px; }
+    .top { display:flex; gap:12px; align-items:center; margin-bottom: 12px; }
+    .msg { margin: 10px 0; padding: 10px; background: #f6f6ff; border:1px solid #e6e6ff; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px; vertical-align: top; }
+    .small { font-size: 12px; color: #666; }
+    .badge { padding:4px 10px; border-radius:999px; background:#eee; display:inline-block; }
+    .badge.red { background:#ffe5e5; color:#a00; }
+    .badge.green { background:#e7ffe7; color:#0a0; }
+    .badge.yellow { background:#fff6d6; color:#865b00; }
+    .actions form { display:inline; margin-right:6px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h2 style="margin:0;">クーポン（本部管理）</h2>
+    <a href="/">←ダッシュボード</a>
+    <a href="/reviews">口コミ</a>
+    <span class="small">view:
+      <a href="/coupons?view=all">all</a> /
+      <a href="/coupons?view=draft">draft</a> /
+      <a href="/coupons?view=soon">soon</a> /
+      <a href="/coupons?view=expired">expired</a>
+    </span>
+  </div>
+
+  {% if msg %}
+    <div class="msg">
+      {% if msg == "coupon_created" %} クーポンを作成しました
+      {% elif msg == "ai_suggested" %} AI提案を生成しました
+      {% elif msg == "ai_failed" %} AI提案の生成に失敗しました
+      {% elif msg == "approved" %} 承認しました
+      {% else %} {{ msg }}
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <h3>クーポン作成</h3>
+  <form method="post" action="/coupons">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; max-width: 900px;">
+      <div>
+        <label>店舗</label><br/>
+        <select name="store_id" style="width:100%; padding:8px;">
+          {% for s in stores %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>期限（YYYY-MM-DD）</label><br/>
+        <input name="expires_on" value="{{ today }}" style="width:100%; padding:8px;" />
+      </div>
+      <div>
+        <label>タイトル</label><br/>
+        <input name="title" style="width:100%; padding:8px;" />
+      </div>
+      <div>
+        <label>CTA URL（任意）</label><br/>
+        <input name="cta_url" style="width:100%; padding:8px;" />
+      </div>
+      <div style="grid-column: 1 / span 2;">
+        <label>説明</label><br/>
+        <textarea name="description" style="width:100%; height:90px; padding:8px;"></textarea>
+      </div>
+    </div>
+    <button style="margin-top:10px; padding:10px 14px;">作成</button>
+  </form>
+
+  <h3 style="margin-top:18px;">一覧</h3>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>店舗</th>
+      <th>状態</th>
+      <th>内容</th>
+      <th>AI提案</th>
+      <th>操作</th>
+    </tr>
+    {% for c in coupons %}
+      <tr>
+        <td>{{ c.id }}</td>
+        <td><b>{{ c.store.name }}</b></td>
+        <td>
+          {% if c.status == "approved" %}
+            <span class="badge green">approved</span>
+          {% else %}
+            <span class="badge">draft</span>
+          {% endif %}
+          <div class="small">期限: {{ c.expires_on }}</div>
+          {% if c.last_error %}
+            <div class="small" style="color:#a00;">ERR: {{ c.last_error }}</div>
+          {% endif %}
+        </td>
+        <td style="white-space:pre-wrap;">
+          <b>{{ c.title }}</b><br/>
+          {{ c.description }}<br/>
+          <span class="small">CTA: {{ c.cta_url or (c.store.cta_url or "-") }}</span>
+        </td>
+        <td style="white-space:pre-wrap;">{{ c.ai_suggestion or "" }}</td>
+        <td class="actions">
+          <form method="post" action="/coupons/{{ c.id }}/ai_suggest">
+            <button type="submit">AI提案</button>
+          </form>
+          <form method="post" action="/coupons/{{ c.id }}/approve">
+            <button type="submit">承認</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

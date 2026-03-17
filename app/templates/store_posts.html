@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>投稿作成</title>
+
+<style>
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+padding:20px;
+background:#f6f7f9;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+button{
+padding:8px 12px;
+border:none;
+border-radius:6px;
+background:#111;
+color:white;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>{{ store.name }} 投稿作成</h1>
+
+{% if draft_posts %}
+
+{% for p in draft_posts %}
+
+<div class="card">
+
+<div><b>投稿ID {{ p.id }}</b></div>
+<br>
+<div>{{ p.content }}</div>
+<br>
+
+<form method="post" action="/posts/{{ p.id }}/approve">
+<button type="submit">投稿する</button>
+</form>
+
+</div>
+
+{% endfor %}
+
+{% else %}
+
+<div class="card">
+下書き投稿はありません
+</div>
+
+{% endif %}
+
+<a href="/store/{{ store.id }}/page">戻る</a>
+
+</body>
+</html>

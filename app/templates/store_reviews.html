@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>口コミ対応</title>
+
+<style>
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+padding:20px;
+background:#f6f7f9;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+button{
+padding:8px 12px;
+border:none;
+border-radius:6px;
+background:#e53935;
+color:white;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>{{ store.name }} 口コミ対応</h1>
+
+{% for r in reviews %}
+
+<div class="card">
+
+<b>★ {{ r.rating }}</b><br><br>
+
+<div style="white-space:pre-wrap;">
+{{ r.comment }}
+</div>
+
+<br>
+
+<form method="post" action="/reviews/{{ r.id }}/quick_reply" onsubmit="setTimeout(()=>location.reload(), 500)">
+  <button>ワンクリック返信</button>
+</form>
+
+</div>
+
+{% endfor %}
+
+<a href="/store/{{ store.id }}/page">戻る</a>
+
+</body>
+</html>

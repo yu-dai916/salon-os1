@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>本部ダッシュボード</title>
+
+<style>
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  padding:20px;
+  background:#f6f7f9;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+  background:white;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+th,td{
+  padding:12px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+}
+
+button{
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  background:#111;
+  color:white;
+  cursor:pointer;
+}
+
+.danger{ color:red; font-weight:bold; }
+.warn{ color:orange; font-weight:bold; }
+.ok{ color:green; font-weight:bold; }
+</style>
+</head>
+
+<body>
+
+<h1>本部ダッシュボード</h1>
+
+<div style="display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap;">
+
+  <div class="card" style="min-width:180px;">
+    未返信口コミ<br>
+    <b>{{ unreplied_count }}</b>
+  </div>
+
+  <div class="card" style="min-width:180px;">
+    投稿待ち<br>
+    <b>{{ pending_count }}</b>
+  </div>
+
+  <div class="card" style="min-width:180px;">
+    投稿なし店舗<br>
+    <b>{{ inactive_store_count }}</b>
+  </div>
+
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">店舗一覧</h2>
+
+  <table>
+    <tr>
+      <th>店舗</th>
+      <th>口コミ</th>
+      <th>低評価</th>
+      <th>投稿</th>
+      <th>タスク</th>
+      <th>危険度</th>
+      <th>操作</th>
+    </tr>
+
+    {% for row in data %}
+    <tr>
+      <td>{{ row.store_name }}</td>
+      <td>{{ row.reviews }}</td>
+      <td>{{ row.low_reviews }}</td>
+      <td>{{ row.posts }}</td>
+      <td>{{ row.open_tasks }}</td>
+
+      <!-- ★ここが重要（判断UI） -->
+     <td>
+  {% if row.low_reviews >= 1 %}
+    <a href="/store/{{ row.store_id }}/reviews" class="danger" style="text-decoration:none;">危険</a>
+  {% elif row.reviews == 0 %}
+    <a href="/store/{{ row.store_id }}/page" class="warn" style="text-decoration:none;">注意</a>
+  {% else %}
+    <span class="ok">正常</span>
+  {% endif %}
+</td>
+
+      <!-- ★ここが操作導線 -->
+      <td>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+
+          <a href="/store/{{ row.store_id }}/page">
+            <button>店長</button>
+          </a>
+
+          <a href="/store/{{ row.store_id }}/reviews">
+            <button>口コミ</button>
+          </a>
+
+          <a href="/store/{{ row.store_id }}/posts">
+            <button>投稿</button>
+          </a>
+
+        </div>
+      </td>
+
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <a href="/hq/risk">危険店舗ランキングを見る</a><br><br>
+  <a href="/hq/ranking">店舗ランキングを見る</a><br><br>
+  <a href="/hq/scoreboard">スコアボードを見る</a>
+</div>
+
+</body>
+</html>

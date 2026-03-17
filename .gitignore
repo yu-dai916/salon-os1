@@ -1,0 +1,11 @@
+.env
+.env.*
+ga4-service-account.json
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
+test.db
+*.sqlite3

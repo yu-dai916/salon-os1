@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Reviews</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 16px; }
+    .top { display:flex; gap:12px; align-items:center; margin-bottom: 12px; }
+    .msg { margin: 10px 0; padding: 10px; background: #f6f6ff; border:1px solid #e6e6ff; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px; vertical-align: top; }
+    .small { font-size: 12px; color: #666; }
+    .actions form { display:inline; margin-right:6px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h2 style="margin:0;">口コミ（本部返信管理）</h2>
+    <a href="/">←ダッシュボード</a>
+    <a href="/coupons">クーポン</a>
+  </div>
+
+  {% if msg %}
+    <div class="msg">
+      {% if msg == "reply_generated" %} AI返信案を生成しました
+      {% elif msg == "reply_failed" %} AI返信生成に失敗しました（OPENAIキーや設定確認）
+      {% elif msg == "reply_approved" %} 返信を承認しました（今はDB確定）
+      {% elif msg == "no_draft" %} 返信案がありません（先に生成して）
+      {% elif msg == "already_replied" %} すでに返信済みです
+      {% else %} {{ msg }}
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>店舗</th>
+      <th>口コミ</th>
+      <th>AI返信案</th>
+      <th>操作</th>
+    </tr>
+    {% for r in reviews %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>
+          <b>{{ r.store.name }}</b><br/>
+          <span class="small">評価: {{ r.rating or "-" }}</span><br/>
+          <span class="small">投稿: {{ r.review_time or "-" }}</span>
+          {% if r.last_error %}
+            <div class="small" style="color:#a00;">ERR: {{ r.last_error }}</div>
+          {% endif %}
+        </td>
+        <td style="white-space:pre-wrap;">
+          <div class="small">{{ r.reviewer_name or "" }}</div>
+          {{ r.comment or "" }}
+        </td>
+        <td style="white-space:pre-wrap;">
+          {% if r.reply_text %}
+            <div class="small" style="color:green;">承認済み（{{ r.replied_at }}）</div>
+            {{ r.reply_text }}
+          {% else %}
+            {{ r.reply_draft or "" }}
+          {% endif %}
+        </td>
+        <td class="actions">
+          {% if not r.reply_text %}
+            <form method="post" action="/reviews/{{ r.id }}/generate_reply">
+              <button type="submit">AI生成</button>
+            </form>
+            <form method="post" action="/reviews/{{ r.id }}/approve_reply">
+              <button type="submit">承認</button>
+            </form>
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

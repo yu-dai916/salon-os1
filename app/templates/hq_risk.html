@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>危険店舗</title>
+
+<style>
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI";
+padding:20px;
+background:#f5f6fa;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>危険店舗ランキング</h1>
+
+{% for r in rows %}
+
+<div class="card">
+
+  <h2>{{ r.name }}</h2>
+
+  <p>リスクスコア: {{ r.risk }}</p>
+
+  <p>
+    未返信口コミ: {{ r.unreplied }}件<br>
+    低評価レビュー: {{ r.low_reviews }}件<br>
+    直近投稿: {{ r.posts }}件<br>
+    未対応タスク: {{ r.tasks }}件
+  </p>
+
+  <a href="/store/{{ r.id }}/page">→ 店舗詳細</a>
+<br><br>
+<a href="/store/{{ r.id }}/reviews">→ 口コミ対応する</a>
+</div>
+
+{% endfor %}
+
+</body>
+</html>

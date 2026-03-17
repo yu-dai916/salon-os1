@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="utf-8">
+
+<title>SalonOS スコアボード</title>
+
+<style>
+
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI";
+background:#f5f6fa;
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+margin-bottom:10px;
+border-radius:10px;
+}
+
+.rank{
+font-size:22px;
+font-weight:bold;
+}
+
+.score{
+color:#2ecc71;
+font-size:18px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>SalonOS スコアボード</h1>
+
+{% for s in data %}
+
+<div class="card">
+
+<div class="rank">{{ loop.index }}位 {{ s.store }}</div>
+
+<div class="score">スコア {{ s.score }}</div>
+
+口コミ {{ s.reviews }} |
+投稿 {{ s.posts }} |
+未返信 {{ s.unreplied }}
+
+</div>
+
+{% endfor %}
+
+</body>
+
+</html>
