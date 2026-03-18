@@ -14,9 +14,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/risk", response_class=HTMLResponse)
 def risk_ranking(request: Request, db: Session = Depends(get_db)):
-    org_id = request.state.user["org_id"]
-
-    stores = db.query(Store).filter(Store.org_id == org_id).all()
+    # デモ優先：orgフィルタを一旦外す
+    stores = db.query(Store).all()
 
     rows = []
 
