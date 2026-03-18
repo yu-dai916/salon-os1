@@ -50,7 +50,7 @@ from app.routers.google_locations import router as google_locations_router
 from app.routers.hq_demo import router as hq_demo_router
 from app.routers.hq_risk_demo import router as risk_demo_router
 from app.routers.store_mobile import router as store_mobile_router
-from app.routers.hq_risk import router as hq_risk_router
+
 from app.routers.store_ranking import router as store_ranking_router
 from app.routers.login import router as login_router
 from app.routers.logout import router as logout_router
