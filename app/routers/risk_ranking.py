@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -13,15 +14,15 @@ router = APIRouter(prefix="/hq")
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.get("/risk")
+@router.get("/risk", response_class=HTMLResponse)
 def risk_ranking(request: Request, db: Session = Depends(get_db)):
+    org_id = request.state.user["org_id"]
 
-    stores = db.query(Store).all()
+    stores = db.query(Store).filter(Store.org_id == org_id).all()
 
     rows = []
 
     for store in stores:
-
         # 低評価レビュー
         low_reviews = db.query(Review).filter(
             Review.store_id == store.id,
@@ -31,22 +32,22 @@ def risk_ranking(request: Request, db: Session = Depends(get_db)):
         # 未返信口コミ
         unreplied = db.query(Review).filter(
             Review.store_id == store.id,
-            Review.reply_status != "sent"
+            Review.reply_text.is_(None)
         ).count()
 
-        # 投稿（7日以内）
+        # 直近7日以内の投稿
         recent_posts = db.query(Post).filter(
             Post.store_id == store.id,
             Post.created_at >= datetime.utcnow() - timedelta(days=7)
         ).count()
 
-        # タスク
+        # 未対応タスク
         open_tasks = db.query(Task).filter(
             Task.store_id == store.id,
             Task.status == "open"
         ).count()
 
-        # スコア（高いほど危険）
+        # リスクスコア
         risk = (
             low_reviews * 5 +
             unreplied * 2 +
