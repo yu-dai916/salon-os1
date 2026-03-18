@@ -927,7 +927,209 @@ def store_metrics(store_id: int, db: Session = Depends(get_db)):
 def competitors(keyword: str):
     data = get_google_competitors(keyword)
     return data
+# -------------------------
+# Demo seed
+# -------------------------
+@app.post("/seed/demo")
+def seed_demo(db: Session = Depends(get_db)):
+    # 既存デモ店舗があれば消す
+    demo_codes = ["demo-sakai", "demo-fukai", "demo-otsu"]
 
+    existing_stores = db.query(Store).filter(Store.store_code.in_(demo_codes)).all()
+    existing_store_ids = [s.id for s in existing_stores]
+
+    if existing_store_ids:
+        db.query(Review).filter(Review.store_id.in_(existing_store_ids)).delete(synchronize_session=False)
+        db.query(Post).filter(Post.store_id.in_(existing_store_ids)).delete(synchronize_session=False)
+        db.query(Metric).filter(Metric.store_id.in_(existing_store_ids)).delete(synchronize_session=False)
+        db.query(Store).filter(Store.id.in_(existing_store_ids)).delete(synchronize_session=False)
+        db.commit()
+
+    # 店舗3件
+    s1 = Store(
+        org_id=1,
+        store_code="demo-sakai",
+        name="AVANCE.深井",
+        station="深井",
+        hpb_url="",
+        post_interval_days=2,
+        strategy_key="reservation_push",
+        phone_number="",
+        cta_url=""
+    )
+    s2 = Store(
+        org_id=1,
+        store_code="demo-fukai",
+        name="アリオ鳳",
+        station="鳳",
+        hpb_url="",
+        post_interval_days=2,
+        strategy_key="reservation_push",
+        phone_number="",
+        cta_url=""
+    )
+    s3 = Store(
+        org_id=1,
+        store_code="demo-otsu",
+        name="AVANCE.泉大津",
+        station="泉大津",
+        hpb_url="",
+        post_interval_days=2,
+        strategy_key="reservation_push",
+        phone_number="",
+        cta_url=""
+    )
+
+    db.add_all([s1, s2, s3])
+    db.commit()
+    db.refresh(s1)
+    db.refresh(s2)
+    db.refresh(s3)
+
+    # KPI（店長ページの「今日やること」用）
+    m1 = Metric(
+        store_id=s1.id,
+        metric_date=datetime.utcnow().date(),
+        google_rank=14,
+        hpb_clicks=11,
+        phone_calls=1,
+    )
+    m2 = Metric(
+        store_id=s2.id,
+        metric_date=datetime.utcnow().date(),
+        google_rank=8,
+        hpb_clicks=28,
+        phone_calls=4,
+    )
+    m3 = Metric(
+        store_id=s3.id,
+        metric_date=datetime.utcnow().date(),
+        google_rank=3,
+        hpb_clicks=54,
+        phone_calls=7,
+    )
+
+    db.add_all([m1, m2, m3])
+
+    # 口コミ
+    reviews = [
+        Review(
+            store_id=s1.id,
+            reviewer_name="山田花子",
+            rating=2,
+            comment="カットと髪質改善カラーで来店しましたが、待ち時間が少し長かったです。仕上がりは良かったです。",
+            menu_name="カット＋髪質改善カラー",
+            staff_name="藤田",
+            reply_text=None,
+        ),
+        Review(
+            store_id=s1.id,
+            reviewer_name="中村彩",
+            rating=5,
+            comment="髪質改善トリートメントが良くて手触りがかなり変わりました！",
+            menu_name="髪質改善トリートメント",
+            staff_name="藤田",
+            reply_text=None,
+        ),
+        Review(
+            store_id=s1.id,
+            reviewer_name="田中一樹",
+            rating=4,
+            comment="カットは満足です。またお願いしたいです。",
+            menu_name="カット",
+            staff_name="藤田",
+            reply_text=None,
+        ),
+        Review(
+            store_id=s2.id,
+            reviewer_name="松本美咲",
+            rating=4,
+            comment="ハイライトがきれいで満足です。雰囲気も良かったです。",
+            menu_name="カット＋ハイライト",
+            staff_name="藤田",
+            reply_text=None,
+        ),
+        Review(
+            store_id=s2.id,
+            reviewer_name="井上里奈",
+            rating=5,
+            comment="子連れでも行きやすく、髪質改善カラーの仕上がりも良かったです。",
+            menu_name="髪質改善カラー",
+            staff_name="藤田",
+            reply_text="ご来店ありがとうございました！またお待ちしております。",
+        ),
+        Review(
+            store_id=s3.id,
+            reviewer_name="小林舞",
+            rating=5,
+            comment="カットもカラーも丁寧で安心して任せられました。",
+            menu_name="カット＋カラー",
+            staff_name="藤田",
+            reply_text="ご来店ありがとうございました！またのご来店をお待ちしております。",
+        ),
+        Review(
+            store_id=s3.id,
+            reviewer_name="木村愛",
+            rating=5,
+            comment="髪質改善トリートメントでまとまりが出て大満足です！",
+            menu_name="髪質改善トリートメント",
+            staff_name="藤田",
+            reply_text="嬉しい口コミありがとうございます！またお待ちしております。",
+        ),
+    ]
+
+    db.add_all(reviews)
+
+    # 投稿（差が出るように店舗ごとに件数を変える）
+    posts = [
+        Post(
+            org_id=1,
+            store_id=s2.id,
+            status="posted",
+            content="春の髪質改善カラー特集を公開しました。",
+            source_title="春の髪質改善カラー",
+            source_url="",
+            posted_at=datetime.utcnow(),
+        ),
+        Post(
+            org_id=1,
+            store_id=s2.id,
+            status="draft",
+            content="顔まわりレイヤーのおすすめスタイル。",
+            source_title="顔まわりレイヤー",
+            source_url="",
+        ),
+        Post(
+            org_id=1,
+            store_id=s3.id,
+            status="posted",
+            content="髪質改善トリートメントのビフォーアフターを投稿。",
+            source_title="髪質改善トリートメント",
+            source_url="",
+            posted_at=datetime.utcnow(),
+        ),
+        Post(
+            org_id=1,
+            store_id=s3.id,
+            status="posted",
+            content="大人女性向けショート特集を投稿。",
+            source_title="大人女性ショート",
+            source_url="",
+            posted_at=datetime.utcnow(),
+        ),
+    ]
+
+    db.add_all(posts)
+    db.commit()
+
+    return {
+        "ok": True,
+        "stores": [
+            {"id": s1.id, "name": s1.name},
+            {"id": s2.id, "name": s2.name},
+            {"id": s3.id, "name": s3.name},
+        ]
+    }
 # -------------------------
 # Health
 # -------------------------
