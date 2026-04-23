@@ -1,14 +1,13 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from fastapi.requests import Request
+from fastapi.templating import Jinja2Templates
 
 from app.db import get_db
-from app.models import Store, Post, Review
+from app.models import Store
 from app.models.task import Task
 from app.models_metrics import Metric
-from app.services.task_engine import sync_tasks
 
 router = APIRouter(prefix="/store")
 templates = Jinja2Templates(directory="app/templates")
@@ -20,6 +19,16 @@ def store_dashboard_page(
     request: Request,
     db: Session = Depends(get_db),
 ):
+    # 👇ここからが関数の中（インデント大事）
+
+    tasks = db.query(Task).filter(
+    Task.store_id == store_id,
+    Task.type == "review_reply",
+    Task.status == "open"
+).order_by(
+    Task.priority.desc()
+).all()
+
     store = db.query(Store).filter(Store.id == store_id).first()
 
     if not store:
@@ -32,10 +41,16 @@ def store_dashboard_page(
         .first()
     )
 
+    return templates.TemplateResponse("store_dashboard.html", {
+        "request": request,
+        "store": store,
+        "metric": metric,
+        "tasks": tasks
+    })
     rank = metric.google_rank if metric else None
     clicks = metric.hpb_clicks if metric else None
     calls = metric.phone_calls if metric else None
-    
+
     sync_tasks(db, store_id)
 
     tasks = (

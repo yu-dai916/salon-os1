@@ -1,15 +1,38 @@
-def format_for_google_post(title: str, excerpt: str, source_url: str) -> str:
-    title = (title or "").strip()
-    excerpt = (excerpt or "").strip()
+def format_for_google_post(
+    title: str,
+    excerpt: str,
+    source_url: str,
+    area: str,
+    main_menu: str,
+    store_name: str,
+    phone_number: str | None,
+    cta_url: str | None,
+) -> str:
 
-    lines = []
-    if title:
-        lines.append(f"")
-    if excerpt:
-        lines.append(excerpt)
+    phone = phone_number or ""
+    cta = cta_url or ""
 
-    lines.append("")
-    lines.append("▼詳細はこちら")
-    lines.append(source_url)
+    # None対策（これ重要）
+    area = area or ""
+    main_menu = main_menu or ""
 
-    return "\n".join(lines).strip()
+    seo_title = f"{area} 美容室｜{main_menu}なら{store_name}"
+
+    body = f"""
+{area}の美容室「{store_name}」です。
+
+今回は【{main_menu}】のご紹介。
+
+{excerpt}
+
+ダメージを抑えながら、ツヤとまとまりのある仕上がりに。
+"""
+
+    if cta:
+        body += f"\n▼ご予約はこちら\n{cta}"
+    elif phone:
+        body += f"\n▼お電話はこちら\n{phone}"
+
+    body += f"\n\n▼詳しくはこちら\n{source_url}"
+
+    return f"{seo_title}\n\n{body.strip()}"

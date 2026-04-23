@@ -19,6 +19,11 @@ class Review(Base):
 
     review_time = Column(DateTime)
 
+    # 🔥追加
+    reply_draft = Column(Text, nullable=True)
+
+    reply_strategy = Column(String)
+
     reply_text = Column(Text)
 
     replied_at = Column(DateTime)

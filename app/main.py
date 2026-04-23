@@ -1,5 +1,8 @@
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from fastapi import FastAPI, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -14,6 +17,7 @@ from openai import OpenAI
 
 from app.db import Base, engine, get_db
 from app.models import Org, Store, Post, Review
+from app.models import Post
 from app.models_metrics import Metric
 from app.models_competitor import Competitor
 from app.models_keywords import Keyword, StoreKeyword
@@ -25,18 +29,20 @@ from app.services.formatter import format_for_google_post
 from app.services.store_ai_analyzer import analyze_store
 from app.services.store_task_generator import generate_tasks
 from app.services.google_competitors import get_google_competitors
+from app.services.line_notify_service import notify_store_users
 
 from app.routers.dashboard import router as dashboard_router
 from app.routers.tasks import router as tasks_router
-from app.routers.replies import router as ai_router
+#from app.routers.replies import router as ai_router
 from app.routers.review_replies import router as review_reply_router
 from app.routers.tasks_actions import router as tasks_actions_router
+from app.routers.task_simple import router as task_simple_router
 from app.routers.review_send_reply import router as send_reply_router
-from app.routers.hq_dashboard import router as hq_router
 from app.routers.store_dashboard_page import router as store_dashboard_page_router
 from app.routers.hq_dashboard import router as hq_router
+from app.routers.hq_dashboard import router as hq_dashboard_router
 from app.routers.serp_dashboard import router as serp_router
-from app.routers.ai_store_diagnosis import router as ai_diagnosis_router
+#from app.routers.ai_store_diagnosis import router as ai_diagnosis_router
 from app.routers.store_diagnosis import router as diagnosis_router
 from app.routers.risk_ranking import router as risk_router
 from app.routers.review_request import router as review_request_router
@@ -56,9 +62,32 @@ from app.routers.login import router as login_router
 from app.routers.logout import router as logout_router
 from app.routers.store_reviews import router as store_reviews_router
 from app.routers.store_posts import router as store_posts_router
-from app.routers.review_quick_reply import router as quick_reply_router
+from app.routers.store_dashboard_test import router as test_router
+#from app.routers.review_quick_reply import router as quick_reply_router
+from app.api.post import router as post_router
+from app.api.admin import router as admin_router
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+import requests
+import os
+
+CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_TOKEN")
+
+def send_line_message(user_id, text):
+    url = "https://api.line.me/v2/bot/message/push"
+
+    headers = {
+        "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "to": user_id,
+        "messages": [{"type": "text", "text": text}]
+    }
+
+    requests.post(url, headers=headers, json=data)
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key) if api_key else None
 # まず FastAPI を作る
 app = FastAPI(title="GBP Platform MVP")
 
@@ -70,7 +99,7 @@ def root():
 # その後 router を登録
 app.include_router(dashboard_router)
 app.include_router(tasks_router)
-app.include_router(ai_router)
+#app.include_router(ai_router)
 app.include_router(review_reply_router)
 app.include_router(tasks_actions_router)
 app.include_router(send_reply_router)
@@ -80,7 +109,7 @@ app.include_router(hq_router)
 app.include_router(store_dashboard_page_router)
 
 app.include_router(serp_router)
-app.include_router(ai_diagnosis_router)
+#app.include_router(ai_diagnosis_router)
 app.include_router(diagnosis_router)
 
 # 危険店舗ランキング
@@ -103,7 +132,12 @@ app.include_router(login_router)
 app.include_router(logout_router)
 app.include_router(store_reviews_router)
 app.include_router(store_posts_router)
-app.include_router(quick_reply_router)
+app.include_router(task_simple_router)
+app.include_router(test_router)
+#app.include_router(quick_reply_router)
+app.include_router(post_router)
+app.include_router(admin_router)
+app.include_router(hq_dashboard_router)
 # fake auth
 # -------------------------
 # -------------------------
@@ -113,6 +147,13 @@ app.include_router(quick_reply_router)
 async def fake_auth(request: Request, call_next):
 
     path = request.url.path
+
+    # 🔥 ここ追加（adminスキップ）
+    if path.startswith("/admin"):
+        return await call_next(request)
+
+    if path.startswith("/line"):
+        return await call_next(request)
 
     # loginとdocsはスルー
     if path.startswith("/login") or path.startswith("/docs") or path.startswith("/openapi"):
@@ -130,9 +171,7 @@ async def fake_auth(request: Request, call_next):
         "role": "HQ_ADMIN"
     }
 
-    response = await call_next(request)
-
-    return response
+    return await call_next(request)
 
 @app.on_event("startup")
 def on_startup():
@@ -471,7 +510,6 @@ def create_store(
         return RedirectResponse(url="/?msg=store_duplicate", status_code=303)
 
     return RedirectResponse(url="/?msg=created", status_code=303)
-
 # -------------------------
 # 口コミ追加（デモ用）
 # -------------------------
@@ -560,8 +598,13 @@ def approve_post(post_id: int, db: Session = Depends(get_db)):
     db.add(p)
     db.commit()
 
-    return RedirectResponse(url="/?msg=approved", status_code=303)
+    notify_store_users(
+        db,
+        p.store_id,
+        f"【投稿承認】\n{p.content[:20]}"
+    )
 
+    return RedirectResponse(url="/?msg=approved", status_code=303)
 
 # -------------------------
 # 投稿拒否
@@ -764,14 +807,51 @@ def agency_dashboard(db: Session = Depends(get_db)):
 
 
 # -------------------------
+# 危険度計算（優先処理版）
+# -------------------------
+def calc_review_risk(r):
+    score = 0
+    text = r.comment or ""
+
+    # ① 低評価
+    if r.rating and r.rating <= 2:
+        score += 40
+
+    # ② 未返信
+    if r.reply_text is None:
+        score += 20
+
+    # ③ 新しい（7日以内）
+    if r.created_at and r.created_at >= datetime.utcnow() - timedelta(days=7):
+        score += 20
+
+    # ④ ネガワード
+    bad_words = ["最悪", "遅い", "待たされた", "雑", "二度と", "不満"]
+    for w in bad_words:
+        if w in text:
+            score += 30
+            break
+
+    # ⑤ 長文
+    if len(text) > 100:
+        score += 20
+
+    # ⑥ スタッフ名
+    if "藤田" in text:
+        score += 20
+
+    return score
+
+
+# -------------------------
 # 店長ダッシュボード
 # -------------------------
 @app.get("/store_dashboard/{store_id}", response_class=HTMLResponse)
 def store_dashboard(store_id: int, request: Request, db: Session = Depends(get_db)):
+
     store = db.query(Store).filter(Store.id == store_id).first()
     if not store:
         return HTMLResponse("store not found", status_code=404)
-
     metric = (
         db.query(Metric)
         .filter(Metric.store_id == store.id)
@@ -786,7 +866,6 @@ def store_dashboard(store_id: int, request: Request, db: Session = Depends(get_d
     posts_count = (
         db.query(func.count(Post.id))
         .filter(Post.store_id == store.id)
-        .filter(Post.status == "posted")
         .scalar()
     ) or 0
 
@@ -803,15 +882,22 @@ def store_dashboard(store_id: int, request: Request, db: Session = Depends(get_d
         db.query(Review)
         .filter(Review.store_id == store.id)
         .filter(Review.reply_text.is_(None))
-        .order_by(Review.id.desc())
-        .limit(10)
         .all()
     )
+
+    # 🔥 危険度付与
+    for r in reviews:
+        r.risk = calc_review_risk(r)
+
+    # 🔥 危険度順に並び替え
+    reviews = sorted(reviews, key=lambda r: r.risk, reverse=True)
+
+    # 上位10件だけ表示
+    reviews = reviews[:10]
 
     draft_posts = (
         db.query(Post)
         .filter(Post.store_id == store.id)
-        .filter(Post.status == "draft")
         .order_by(Post.id.desc())
         .limit(10)
         .all()
@@ -837,7 +923,7 @@ def store_dashboard(store_id: int, request: Request, db: Session = Depends(get_d
 # -------------------------
 # AI口コミ返信
 # -------------------------
-@app.post("/reviews/{review_id}/ai_reply")
+#@app.post("/reviews/{review_id}/ai_reply")
 def ai_reply(review_id: int, db: Session = Depends(get_db)):
     review = db.query(Review).filter(Review.id == review_id).first()
 
@@ -856,47 +942,61 @@ def ai_reply(review_id: int, db: Session = Depends(get_db)):
 ・次回来店導線
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+    try:
+        if not client:
+            reply = "（デモ）ご来店ありがとうございます。またお待ちしております。"
+        else:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            reply = response.choices[0].message.content
+    except Exception:
+        reply = "（デモ）ご来店ありがとうございます。またお待ちしております。"
 
-    reply = response.choices[0].message.content
+    # reply_draft が無い環境でも落ちないようにする
+    if hasattr(review, "reply_draft"):
+        review.reply_draft = reply
+    else:
+        review.reply_text = reply
 
-    review.reply_draft = reply
     db.add(review)
     db.commit()
 
     return RedirectResponse(
-        url=f"/store_dashboard/{review.store_id}",
+        url=f"/store/{review.store_id}/reviews",
         status_code=303,
     )
-
 
 # -------------------------
 # 口コミ返信 承認
 # -------------------------
-@app.post("/reviews/{review_id}/approve_reply")
+#@app.post("/reviews/{review_id}/approve_reply")
 def approve_reply(review_id: int, db: Session = Depends(get_db)):
-
     review = db.query(Review).filter(Review.id == review_id).first()
 
     if not review:
         return {"error": "review not found"}
 
-    if not review.reply_draft:
+    draft = getattr(review, "reply_draft", None)
+
+    if draft:
+        review.reply_text = draft
+    elif review.reply_text:
+        # すでに reply_text に入ってるならそのまま承認扱い
+        pass
+    else:
         return {"error": "no draft"}
 
-    review.reply_text = review.reply_draft
     review.replied_at = datetime.utcnow()
 
     db.add(review)
     db.commit()
 
     return RedirectResponse(
-        url=f"/store_dashboard/{review.store_id}",
+        url=f"/store/{review.store_id}/reviews",
         status_code=303,
     )
 
@@ -1131,9 +1231,155 @@ def seed_demo(db: Session = Depends(get_db)):
             {"id": s3.id, "name": s3.name},
         ]
     }
+from fastapi import Request
+from app.db import SessionLocal
+from app.models.store import Store
+from app.models.user import User
+from app.models.store_user import StoreUser
+
 # -------------------------
 # Health
 # -------------------------
 @app.get("/health")
 def health():
+    return {"ok": True}
+
+
+@app.post("/line/test")
+async def line_test(request: Request):
+    body = await request.json()
+
+    events = body.get("events", [])
+    if not events:
+        return {"ok": True}
+
+    event = events[0]
+
+    user_id = event["source"]["userId"]
+    text = event["message"].get("text", "")
+
+    text = text.replace("　", " ").strip()
+    text = text.translate(str.maketrans("０１２３４５６７８９", "0123456789"))
+
+    print("📩", user_id, text)
+
+    db = SessionLocal()
+
+    # ユーザー取得 or 作成
+    user = db.query(User).filter(
+        User.line_user_id == user_id
+    ).first()
+
+    if not user:
+        user = User(line_user_id=user_id)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # =========================
+    # 分岐ここから（全部つながる）
+    # =========================
+    if text == "登録 一覧":
+        stores = db.query(Store).all()
+
+        links = db.query(StoreUser).filter(
+            StoreUser.user_id == user.id
+        ).all()
+
+        my_store_ids = [l.store_id for l in links]
+
+        lines = []
+        for s in stores:
+            if s.id in my_store_ids:
+                lines.append(f"{s.store_code} {s.name}（登録済）")
+            else:
+                lines.append(f"{s.store_code} {s.name}")
+
+        message = "【店舗一覧】\n" + "\n".join(lines) + "\n\n登録するには\n「登録 001」と送信"
+
+        send_line_message(user_id, message)
+
+    elif text.startswith("解除"):
+        parts = text.split()
+
+        if len(parts) < 2:
+            send_line_message(user_id, "❌ 店舗コードを入力してください\n例：解除 001")
+            db.close()
+            return {"ok": True}
+
+        store_code = parts[1]
+
+        store = db.query(Store).filter(
+            Store.store_code == store_code
+        ).first()
+
+        if store:
+            link = db.query(StoreUser).filter(
+                StoreUser.store_id == store.id,
+                StoreUser.user_id == user.id
+            ).first()
+
+            if link:
+                db.delete(link)
+                db.commit()
+
+                send_line_message(
+                    user_id,
+                    f"❌ 解除完了\n{store.name} を通知対象から外しました"
+                )
+            else:
+                send_line_message(
+                    user_id,
+                    f"⚠ 未登録です\n{store.name}"
+                )
+        else:
+            send_line_message(
+                user_id,
+                "❌ 店舗コードが違います\n「登録 一覧」で確認できます"
+            )
+
+    elif text.startswith("登録"):
+        parts = text.split()
+
+        if len(parts) < 2:
+            send_line_message(user_id, "❌ 店舗コードを入力してください\n例：登録 001")
+            db.close()
+            return {"ok": True}
+
+        store_code = parts[1]
+
+        store = db.query(Store).filter(
+            Store.store_code == store_code
+        ).first()
+
+        if store:
+            exists = db.query(StoreUser).filter(
+                StoreUser.store_id == store.id,
+                StoreUser.user_id == user.id
+            ).first()
+
+            if not exists:
+                link = StoreUser(
+                    store_id=store.id,
+                    user_id=user.id
+                )
+                db.add(link)
+                db.commit()
+
+                send_line_message(
+                    user_id,
+                    f"✅ 登録完了\n{store.name} を通知対象にしました"
+                )
+            else:
+                send_line_message(
+                    user_id,
+                    f"⚠ すでに登録済み\n{store.name}"
+                )
+        else:
+            send_line_message(
+                user_id,
+                "❌ 店舗コードが違います\n「登録 一覧」で確認できます"
+            )
+
+    db.close()
     return {"ok": True}

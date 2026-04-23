@@ -12,7 +12,7 @@ from app.models.store import Store
 
 router = APIRouter()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = None
 
 
 @router.post("/reviews/{review_id}/quick_reply")

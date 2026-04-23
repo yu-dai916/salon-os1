@@ -1,7 +1,7 @@
 import os
 from openai import OpenAI
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = None
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
 def generate_coupon_update_text(

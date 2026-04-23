@@ -33,3 +33,9 @@ class Store(Base):
     created_at = Column(DateTime)
 
     google_place_id = Column(String(255))
+
+    line_user_id = Column(String, nullable=True)
+
+    area = Column(String)        # 例：泉大津
+
+    main_menu = Column(String)   # 例：髪質改善カラー

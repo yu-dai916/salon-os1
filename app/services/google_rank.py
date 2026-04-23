@@ -2,7 +2,7 @@ import os
 import requests
 
 
-SERPAPI_KEY = os.getenvdf564fa99619ff3c9732224d413df21327fa776fc8c052a869a8cfd10e4d13b6
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
 
 def get_google_rank(keyword, target_domain):

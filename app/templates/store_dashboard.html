@@ -28,10 +28,6 @@ button{
   cursor:pointer;
 }
 
-ul{
-  margin:8px 0 0 18px;
-}
-
 .small{
   font-size:12px;
   color:#666;
@@ -47,6 +43,7 @@ ul{
 
 <h1>{{ store.name }} 店長ダッシュボード</h1>
 
+<!-- KPI -->
 <div class="card">
   <h2>KPI</h2>
   順位：{{ rank if rank is not none else "-" }}<br>
@@ -56,94 +53,106 @@ ul{
   未返信口コミ：{{ unreplied }}
 </div>
 
+<!-- 今日やること -->
 <div class="card">
   <h2>今日やること</h2>
 
-  <ul>
-    {% for t in tasks %}
-      <li style="margin-bottom:12px;">
+  {% for t in tasks %}
+    <div style="margin-bottom:16px; border-bottom:1px solid #eee; padding-bottom:12px;">
 
-        <b>{{ t.title }}</b><br>
-        <span class="small">{{ t.description }}</span>
+      <p>{{ t.description }}</p>
 
-        <div style="margin-top:8px; display:flex; gap:8px;">
+      {% if t.priority == "danger" %}
+        <p style="color:red;font-weight:bold;">⚠ 危険口コミ</p>
+      {% endif %}
 
-          <!-- 行動ボタン -->
-          {% if t.type == "review_reply" %}
-            <a href="/store/{{ store.id }}/page">
-              <button>口コミ対応する</button>
-            </a>
-          {% elif t.type == "post_create" %}
-           <a href="/store/{{ store.id }}/posts">
-              <button>投稿作成する</button>
-            </a>
-    {% endif %}
+      <div style="display:flex; gap:8px; margin-top:8px;">
 
-          <!-- 完了ボタン -->
-          <form method="post" action="/tasks/{{ t.id }}/done">
-            <button type="submit">完了</button>
-          </form>
+        <!-- ① この口コミに直接飛ぶ -->
+        <a href="/store/{{ store.id }}/reviews?review_id={{ t.review_id }}">
+          <button type="button">返信する</button>
+        </a>
 
-        </div>
+        <!-- ② 完了 -->
+        <form action="/tasks/{{ t.id }}/done" method="post">
+          <button type="submit">完了</button>
+        </form>
 
-      </li>
-    {% endfor %}
-  </ul>
-</div>
-
-<div class="card">
-  <h2>未返信口コミ</h2>
-
-  {% if reviews %}
-    {% for r in reviews %}
-      <div style="border-bottom:1px solid #eee;padding:10px 0">
-        ⭐ {{ r.rating if r.rating is not none else "-" }}
-
-        <br><br>
-
-        <div class="content">{{ r.comment or "" }}</div>
-
-        <br>
-
-        {% if r.reply_draft %}
-          <div class="card" style="box-shadow:none;border:1px solid #eee;padding:12px;margin:10px 0 0 0;">
-            <b>AI返信案</b>
-            <div class="content">{{ r.reply_draft }}</div>
-          </div>
-
-          <form method="post" action="/reviews/{{ r.id }}/approve_reply">
-            <button type="submit">承認して返信済みにする</button>
-          </form>
-        {% else %}
-          <form method="post" action="/reviews/{{ r.id }}/ai_reply">
-            <button type="submit">AI返信作成</button>
-          </form>
-        {% endif %}
       </div>
-    {% endfor %}
-  {% else %}
-    未返信口コミはありません
+
+    </div>
+  {% endfor %}
+
+  {% if not tasks %}
+    <p>やることはありません</p>
   {% endif %}
 </div>
 
+<!-- 未返信口コミ -->
+<div class="card">
+  <h2>未返信口コミ</h2>
+
+  {% for r in reviews %}
+    <div style="border-bottom:1px solid #eee; padding:16px 0;">
+
+      <b>★ {{ r.rating }}</b><br><br>
+
+      <div class="content">{{ r.comment }}</div>
+
+      <div style="margin-top:8px;">
+        危険度: {{ r.risk }}
+      </div>
+
+      {% if r.risk >= 70 %}
+        <div style="color:red;font-weight:bold;">🔥 超危険</div>
+      {% elif r.risk >= 40 %}
+        <div style="color:orange;">⚠ 要対応</div>
+      {% endif %}
+
+      <br>
+
+      {% if r.reply_draft %}
+        <div style="background:#f1f5f9; padding:12px; border-radius:8px;">
+          <strong>AI返信案</strong>
+          <p class="content">{{ r.reply_draft }}</p>
+        </div>
+
+        <form method="post" action="/reviews/{{ r.id }}/approve_reply">
+          <button type="submit">この内容で返信する</button>
+        </form>
+      {% else %}
+        <form method="post" action="/reviews/{{ r.id }}/ai_reply">
+          <button type="submit">AIで返信作成</button>
+        </form>
+      {% endif %}
+
+    </div>
+  {% endfor %}
+
+  {% if not reviews %}
+    <p>未返信口コミはありません</p>
+  {% endif %}
+</div>
+
+<!-- 下書き投稿 -->
 <div class="card">
   <h2>下書き投稿</h2>
 
-  {% if draft_posts %}
-    {% for p in draft_posts %}
-      <div style="border-bottom:1px solid #eee;padding:10px 0">
-        <div class="small">投稿ID {{ p.id }}</div>
-        <div class="content">{{ p.content }}</div>
+  {% for p in draft_posts %}
+    <div style="border-bottom:1px solid #eee; padding:10px 0">
+      <div class="small">投稿ID {{ p.id }}</div>
+      <div class="content">{{ p.content }}</div>
 
-        <br>
+      <br>
 
-        <form method="post" action="/posts/{{ p.id }}/approve">
-          <button type="submit">投稿する</button>
-        </form>
-      </div>
-    {% endfor %}
-  {% else %}
-    下書きはありません
+      <form method="post" action="/posts/{{ p.id }}/approve">
+        <button type="submit">投稿する</button>
+      </form>
+    </div>
+  {% endfor %}
+
+  {% if not draft_posts %}
+    <p>下書きはありません</p>
   {% endif %}
 </div>
 
