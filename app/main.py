@@ -197,43 +197,6 @@ def dashboard(
     stores = db.query(Store).filter(Store.org_id == org_id).all()
 
     # -------------------------
-    # store keywords
-    # -------------------------
-    store_keywords_map = {}
-
-    keyword_rows = (
-        db.query(StoreKeyword, Keyword)
-        .join(Keyword, Keyword.id == StoreKeyword.keyword_id)
-        .order_by(StoreKeyword.priority.asc())
-        .all()
-    )
-
-    for sk, k in keyword_rows:
-        store_keywords_map.setdefault(sk.store_id, []).append({
-            "keyword": k.keyword,
-            "priority": sk.priority,
-        })
-
-    competitors = (
-        db.query(Competitor)
-        .filter(Competitor.org_id == org_id)
-        .all()
-    )
-
-    metrics = (
-        db.query(
-            Store.name,
-            Metric.google_rank,
-            Metric.hpb_clicks,
-            Metric.phone_calls
-        )
-        .join(Store, Store.id == Metric.store_id)
-        .order_by(Metric.metric_date.desc())
-        .limit(20)
-        .all()
-    )
-
-    # -------------------------
     # posts
     # -------------------------
     post_query = (
@@ -278,43 +241,6 @@ def dashboard(
             inactive_store_count += 1
 
     # -------------------------
-    # AI advice
-    # -------------------------
-    ai_advice = []
-
-    for s in stores:
-        metric = (
-            db.query(Metric)
-            .filter(Metric.store_id == s.id)
-            .order_by(Metric.metric_date.desc())
-            .first()
-        )
-
-        rank = metric.google_rank if metric else None
-        clicks = metric.hpb_clicks if metric else None
-        calls = metric.phone_calls if metric else None
-
-        posts_count = (
-            db.query(func.count(Post.id))
-            .filter(Post.store_id == s.id)
-            .scalar()
-        ) or 0
-
-        unreplied = (
-            db.query(func.count(Review.id))
-            .filter(Review.store_id == s.id)
-            .filter(Review.reply_text.is_(None))
-            .scalar()
-        ) or 0
-
-        advice = analyze_store(rank, clicks, calls, posts_count, unreplied)
-
-        ai_advice.append({
-            "store": s.name,
-            "advice": advice
-        })
-
-    # -------------------------
     # 今週の集客タスク
     # -------------------------
     store_tasks = []
@@ -353,7 +279,7 @@ def dashboard(
         })
 
     # -------------------------
-    # 危険店舗ランキング
+    # 🔥 危険店舗ランキング
     # -------------------------
     danger_stores = []
 
@@ -385,45 +311,37 @@ def dashboard(
         score = 0
         reasons = []
 
-        if unreplied > 3:
-            score += 40
+        if unreplied >= 1:
+            score += 30
             reasons.append(f"未返信口コミ {unreplied}")
 
-        if posts_count == 0:
+        if posts_count <= 1:
             score += 20
-            reasons.append("投稿なし")
+            reasons.append("投稿少ない")
 
-        if rank is not None and rank > 10:
+        if rank is not None and rank > 5:
             score += 20
             reasons.append(f"Google順位 {rank}")
 
-        if clicks is not None and clicks < 20:
+        if clicks is not None and clicks < 30:
             score += 20
             reasons.append("HPBクリック低")
 
+        if score > 0:
+            danger_stores.append({
+                "store": s.name,
+                "score": score,
+                "reasons": ", ".join(reasons)
+            })
+
+    if not danger_stores:
         danger_stores.append({
-            "store": s.name,
-            "score": score,
-            "reasons": ", ".join(reasons)
+            "store": "全店舗",
+            "score": 0,
+            "reasons": "問題なし（健全）"
         })
 
     danger_stores = sorted(danger_stores, key=lambda x: x["score"], reverse=True)
-
-    # -------------------------
-    # pending_map
-    # -------------------------
-    pending_rows = (
-        db.query(
-            Post.store_id,
-            func.count(Post.id)
-        )
-        .filter(Post.org_id == org_id)
-        .filter(Post.status == "draft")
-        .group_by(Post.store_id)
-        .all()
-    )
-
-    pending_map = {store_id: count for store_id, count in pending_rows}
 
     # -------------------------
     # competitor_data
@@ -447,30 +365,25 @@ def dashboard(
             "results": data[:5],
         })
 
+    # -------------------------
+    # return
+    # -------------------------
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "stores": stores,
             "posts": posts,
-            "competitors": competitors,
-            "metrics": metrics,
-            "ai_advice": ai_advice,
             "store_tasks": store_tasks,
             "danger_stores": danger_stores,
             "unreplied_count": unreplied_count,
             "pending_count": pending_count,
             "inactive_store_count": inactive_store_count,
-            "pending_map": pending_map,
-            "warn_pending": 30,
-            "max_pending": 50,
+            "competitor_data": competitor_data,
             "status": status,
             "msg": msg,
-            "store_keywords_map": store_keywords_map,
-            "competitor_data": competitor_data,
         },
     )
-
 # -------------------------
 # 店舗追加
 # -------------------------

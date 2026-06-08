@@ -16,3 +16,5 @@ google-analytics-data==0.18.8
 googlesearch-python
 
 playwright
+
+apscheduler

@@ -14,9 +14,9 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/risk", response_class=HTMLResponse)
 def risk_ranking(request: Request, db: Session = Depends(get_db)):
-    # デモ優先：orgフィルタを一旦外す
-    stores = db.query(Store).all()
+    print("🔥 RISK ROUTE 動いてる")
 
+    stores = db.query(Store).all()
     rows = []
 
     for store in stores:
@@ -34,8 +34,40 @@ def risk_ranking(request: Request, db: Session = Depends(get_db)):
             Post.store_id == store.id
         ).count()
 
-        risk = (low_reviews * 5) + (unreplied * 2) - posts_count
+        # -------------------------
+        # リスクスコア（シンプル設計）
+        # -------------------------
+        risk = 0
 
+        if low_reviews > 0:
+            risk += low_reviews * 10
+
+        if unreplied > 0:
+            risk += unreplied * 5
+
+        if posts_count == 0:
+            risk += 10
+
+        # -------------------------
+        # やること（最重要）
+        # -------------------------
+        tasks = []
+
+        if unreplied > 0:
+            tasks.append(f"未返信口コミ {unreplied}件 → 今日中に返信")
+
+        if low_reviews > 0:
+            tasks.append(f"低評価 {low_reviews}件 → 内容確認")
+
+        if posts_count == 0:
+            tasks.append("投稿なし → 今週2件投稿")
+
+        if not tasks:
+            tasks.append("問題なし（このまま維持）")
+
+        # -------------------------
+        # rowsに追加
+        # -------------------------
         rows.append({
             "id": store.id,
             "name": store.name,
@@ -43,9 +75,10 @@ def risk_ranking(request: Request, db: Session = Depends(get_db)):
             "low_reviews": low_reviews,
             "unreplied": unreplied,
             "posts": posts_count,
-            "tasks": 0,
+            "tasks": tasks,
         })
 
+    # リスク高い順
     rows.sort(key=lambda x: x["risk"], reverse=True)
 
     return templates.TemplateResponse(
