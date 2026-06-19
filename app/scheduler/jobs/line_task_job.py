@@ -3,3 +3,7 @@ def run():
 
     from app.services.line_notify import send_line
     send_line("朝タスク通知テスト")
+
+
+if __name__ == "__main__":
+    run()
