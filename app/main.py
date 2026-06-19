@@ -54,7 +54,7 @@ templates = Jinja2Templates(directory="app/templates")
 print("🔥 main.py 読まれてる")
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.jobs.line_task_job import run
+from app.scheduler.jobs.line_task_job import run
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(run, "interval", minutes=1)
