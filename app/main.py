@@ -1,54 +1,30 @@
+# =========================
+# 基本import
+# =========================
 import os
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
-
 load_dotenv()
 
-from fastapi import FastAPI, Depends, Form
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.requests import Request
 
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func, desc
-
-from openai import OpenAI
-
-from app.db import Base, engine, get_db
-from app.models import Org, Store, Post, Review
-from app.models import Post
-from app.models_metrics import Metric
-from app.models_competitor import Competitor
-from app.models_keywords import Keyword, StoreKeyword
-from app.models_agency import Agency
-from app.models_meo import KeywordRanking, CompetitorMetric
-
-from app.services.hpb import fetch_latest_blog
-from app.services.formatter import format_for_google_post
-from app.services.store_ai_analyzer import analyze_store
-from app.services.store_task_generator import generate_tasks
-from app.services.google_competitors import get_google_competitors
-from app.services.line_notify_service import notify_store_users
-
+# =========================
+# ルーター
+# =========================
 from app.routers.dashboard import router as dashboard_router
 from app.routers.tasks import router as tasks_router
-#from app.routers.replies import router as ai_router
 from app.routers.review_replies import router as review_reply_router
 from app.routers.tasks_actions import router as tasks_actions_router
-from app.routers.task_simple import router as task_simple_router
 from app.routers.review_send_reply import router as send_reply_router
 from app.routers.store_dashboard_page import router as store_dashboard_page_router
 from app.routers.hq_dashboard import router as hq_router
-from app.routers.hq_dashboard import router as hq_dashboard_router
 from app.routers.serp_dashboard import router as serp_router
-#from app.routers.ai_store_diagnosis import router as ai_diagnosis_router
 from app.routers.store_diagnosis import router as diagnosis_router
-from app.routers.risk_ranking import router as risk_router
-from app.routers.review_request import router as review_request_router
-from app.routers.hq_page import router as hq_page_router
 from app.routers.hq_ranking import router as hq_ranking_router
 from app.routers.google_auth import router as google_auth_router
+from app.routers.review_request import router as review_request_router
+from app.routers.hq_page import router as hq_page_router
 from app.routers.rank_graph import router as rank_graph_router
 from app.routers.rank_alert import router as rank_alert_router
 from app.routers.hq_control import router as hq_control_router
@@ -56,63 +32,62 @@ from app.routers.google_locations import router as google_locations_router
 from app.routers.hq_demo import router as hq_demo_router
 from app.routers.hq_risk_demo import router as risk_demo_router
 from app.routers.store_mobile import router as store_mobile_router
-
+from app.routers.risk_ranking import router as risk_router
 from app.routers.store_ranking import router as store_ranking_router
 from app.routers.login import router as login_router
 from app.routers.logout import router as logout_router
 from app.routers.store_reviews import router as store_reviews_router
 from app.routers.store_posts import router as store_posts_router
+from app.routers.task_simple import router as task_simple_router
 from app.routers.store_dashboard_test import router as test_router
-#from app.routers.review_quick_reply import router as quick_reply_router
 from app.api.post import router as post_router
 from app.api.admin import router as admin_router
+from app.routers.hq_dashboard import router as hq_dashboard_router
 
-import requests
-import os
-
-CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_TOKEN")
-
-def send_line_message(user_id, text):
-    url = "https://api.line.me/v2/bot/message/push"
-
-    headers = {
-        "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    data = {
-        "to": user_id,
-        "messages": [{"type": "text", "text": text}]
-    }
-
-    requests.post(url, headers=headers, json=data)
-api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key) if api_key else None
-# まず FastAPI を作る
+# =========================
+# FastAPI
+# =========================
 app = FastAPI(title="GBP Platform MVP")
 
 templates = Jinja2Templates(directory="app/templates")
 
+print("🔥 main.py 読まれてる")
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.jobs.line_task_job import run
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(run, "interval", minutes=1)
+scheduler.start()
+
+print("🔥 scheduler 設定入った")
+
+# 👇テスト用（1分ごと）
+scheduler.add_job(run, "interval", minutes=1)
+
+scheduler.start()
+
+# =========================
+# ルート
+# =========================
 @app.get("/")
 def root():
     return RedirectResponse("/login")
-# その後 router を登録
+
+# =========================
+# Router登録
+# =========================
 app.include_router(dashboard_router)
 app.include_router(tasks_router)
-#app.include_router(ai_router)
 app.include_router(review_reply_router)
 app.include_router(tasks_actions_router)
 app.include_router(send_reply_router)
 
 app.include_router(hq_router)
-
 app.include_router(store_dashboard_page_router)
-
 app.include_router(serp_router)
-#app.include_router(ai_diagnosis_router)
 app.include_router(diagnosis_router)
 
-# 危険店舗ランキング
 app.include_router(hq_ranking_router)
 app.include_router(google_auth_router)
 
@@ -125,7 +100,7 @@ app.include_router(google_locations_router)
 app.include_router(hq_demo_router)
 app.include_router(risk_demo_router)
 app.include_router(store_mobile_router)
-# app.include_router(hq_risk_router)
+
 app.include_router(risk_router)
 app.include_router(store_ranking_router)
 app.include_router(login_router)
@@ -134,15 +109,10 @@ app.include_router(store_reviews_router)
 app.include_router(store_posts_router)
 app.include_router(task_simple_router)
 app.include_router(test_router)
-#app.include_router(quick_reply_router)
+
 app.include_router(post_router)
 app.include_router(admin_router)
 app.include_router(hq_dashboard_router)
-# fake auth
-# -------------------------
-# -------------------------
-# auth middleware
-# -------------------------
 @app.middleware("http")
 async def fake_auth(request: Request, call_next):
 
