@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI
+from fastapi import Depends
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
