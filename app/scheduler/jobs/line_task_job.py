@@ -1,9 +1,19 @@
 def run():
+    from app.db import SessionLocal
+    from app.models.review import Review
     from app.services.line_notify import send_line
 
-    msg = "テスト：LINE通知成功"
+    db = SessionLocal()
+
+    try:
+        count = db.query(Review).count()
+        msg = f"DB接続OK：レビュー {count} 件"
+    except Exception as e:
+        msg = f"DBエラー：{e}"
 
     send_line(msg)
+
+    db.close()
 
 
 if __name__ == "__main__":
