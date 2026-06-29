@@ -1,7 +1,14 @@
 def run():
     import os
-    print("DATABASE_URL:", os.getenv("DATABASE_URL"))
 
+    # 🔥 env確認
+    print("🔥 DATABASE_URL (env) =", os.getenv("DATABASE_URL"))
+
+    # 🔥 どのsession.pyが読まれてるか確認
+    import app.db.session
+    print("🔥 実際に読まれてるパス:", app.db.session.__file__)
+
+    # 🔥 ここでimport（順番重要）
     from app.db import SessionLocal
     from app.models.review import Review
     from app.services.line_notify import send_line
@@ -13,6 +20,8 @@ def run():
         msg = f"DB接続OK：レビュー {count} 件"
     except Exception as e:
         msg = f"DBエラー: {e}"
+
+    print("🔥 送信メッセージ:", msg)
 
     send_line(msg)
 
