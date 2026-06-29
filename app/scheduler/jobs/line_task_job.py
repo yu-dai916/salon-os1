@@ -1,7 +1,7 @@
 def run():
     import os
 
-    print("ここ見て👉", os.getenv("DATABASE_URL"))
+    print("🔥🔥🔥 DATABASE_URL 👉", os.getenv("DATABASE_URL"))
 
     from app.db import SessionLocal
     from app.models.review import Review
