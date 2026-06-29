@@ -8,6 +8,7 @@ def run():
     # 🔥 どのsession.pyが読まれてるか確認
     import app.db.session
     print("🔥 実際に読まれてるパス:", app.db.session.__file__)
+    print("🔥 NEW VERSION 🔥")
 
     # ✅ ← ここが重要（修正済み）
     from app.db.session import SessionLocal
