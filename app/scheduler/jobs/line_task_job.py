@@ -1,4 +1,7 @@
 def run():
+    import os
+print("DATABASE_URL:", os.getenv("DATABASE_URL"))
+
     from app.db import SessionLocal
     from app.models.review import Review
     from app.services.line_notify import send_line
