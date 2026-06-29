@@ -120,7 +120,7 @@ class Review(Base):
     rating: Mapped[int] = mapped_column(Integer, nullable=True)
     comment: Mapped[str] = mapped_column(Text, nullable=True)
     reviewer_name: Mapped[str] = mapped_column(String(200), nullable=True)
-    review_time: Mapped[str] = mapped_column(DateTime(timezone=True), nullable=True)
+    
 
     # pending → drafted → approved → sent
     reply_status: Mapped[str] = mapped_column(String(30), default="pending", nullable=False)
