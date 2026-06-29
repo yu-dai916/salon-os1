@@ -21,8 +21,11 @@ jobs:
       - name: Install
         run: pip install -r requirements.txt
 
-      # 🔥 環境変数が来てるか確認
+      # 🔥 環境変数チェック（ここ重要）
       - name: Debug env
+        env:
+          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: env
 
       # 🔥 本処理
