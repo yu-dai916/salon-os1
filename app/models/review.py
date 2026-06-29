@@ -17,7 +17,7 @@ class Review(Base):
 
     reviewer_name = Column(String(200))
 
-    review_time = Column(DateTime)
+    
 
     # 🔥追加
     reply_draft = Column(Text, nullable=True)
