@@ -21,18 +21,17 @@ jobs:
       - name: Install
         run: pip install -r requirements.txt
 
-      # 🔥 環境変数チェック（ここ重要）
+      # 🔥 環境変数チェック（Secrets使わず直書き）
       - name: Debug env
         env:
-          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: "postgresql://postgres:Yudaifuji916%21@db.dmjzoetznpfcicwvujbt.supabase.co:5432/postgres"
         run: env
 
-      # 🔥 本処理
+      # 🔥 本処理（ここも直書き）
       - name: Run job
         env:
           LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: "postgresql://postgres:Yudaifuji916%21@db.dmjzoetznpfcicwvujbt.supabase.co:5432/postgres"
         run: |
           echo "🔥 START"
           python -m app.scheduler.jobs.line_task_job
