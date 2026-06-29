@@ -11,28 +11,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Python setup
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
       - name: Install
         run: pip install -r requirements.txt
 
-      # 🔥 環境変数チェック（Secrets使わず直書き）
-      - name: Debug env
-        env:
-          DATABASE_URL: "postgresql://postgres:Yudaifuji916%21@db.dmjzoetznpfcicwvujbt.supabase.co:5432/postgres"
-        run: env
-
-      # 🔥 本処理（ここも直書き）
       - name: Run job
         env:
           LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
-          DATABASE_URL: "postgresql://postgres:Yudaifuji916%21@db.dmjzoetznpfcicwvujbt.supabase.co:5432/postgres"
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🔥 START"
+          echo "🔥 DATABASE_URL(env) = $DATABASE_URL"
           python -m app.scheduler.jobs.line_task_job
           echo "🔥 END"
