@@ -1,7 +1,7 @@
 def run():
     import os
 
-    print("DATABASE_URL:", os.getenv("DATABASE_URL"))  # ←追加
+    print("ここ見て👉", os.getenv("DATABASE_URL"))
 
     from app.db import SessionLocal
     from app.models.review import Review
@@ -18,3 +18,7 @@ def run():
     send_line(msg)
 
     db.close()
+
+
+if __name__ == "__main__":
+    run()
