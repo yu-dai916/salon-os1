@@ -24,4 +24,8 @@ jobs:
       - name: Run job
         env:
           LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
-        run: python -m app.scheduler.jobs.line_task_job
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🔥 START"
+          python -m app.scheduler.jobs.line_task_job
+          echo "🔥 END"
