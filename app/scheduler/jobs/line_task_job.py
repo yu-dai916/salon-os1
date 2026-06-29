@@ -3,6 +3,7 @@ def run():
 
     # 🔥 env確認
     print("🔥 DATABASE_URL (env) =", os.getenv("DATABASE_URL"))
+    print("🔥 NEW VERSION 🔥")
 
     # 🔥 どのsession.pyが読まれてるか確認
     import app.db.session
