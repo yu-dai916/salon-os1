@@ -1,16 +1,16 @@
 def run():
     import os
 
+    from app.services.google_reviews import fetch_and_save_reviews
+    fetch_and_save_reviews()  # ←これ追加🔥
+
     # 🔥 env確認
     print("🔥 DATABASE_URL (env) =", os.getenv("DATABASE_URL"))
     print("🔥 NEW VERSION 🔥")
 
-    # 🔥 どのsession.pyが読まれてるか確認
     import app.db.session
     print("🔥 実際に読まれてるパス:", app.db.session.__file__)
-    print("🔥 NEW VERSION 🔥")
 
-    # ✅ ← ここが重要（修正済み）
     from app.db.session import SessionLocal
     from app.models.review import Review
     from app.services.line_notify import send_line

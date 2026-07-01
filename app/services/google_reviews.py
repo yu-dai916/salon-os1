@@ -1,32 +1,31 @@
-import os
 import requests
+import os
 
-SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+from app.db.session import SessionLocal
+from app.models.review import Review
 
 
-def get_google_reviews(place_id):
+API_KEY = os.getenv("GOOGLE_API_KEY")
+PLACE_ID = os.getenv("PLACE_ID")
 
-    url = "https://serpapi.com/search.json"
 
-    params = {
-        "engine": "google_maps_reviews",
-        "place_id": place_id,
-        "api_key": SERPAPI_KEY,
-        "hl": "ja"
-    }
+def fetch_and_save_reviews():
+    url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={PLACE_ID}&fields=reviews&key={API_KEY}"
 
-    r = requests.get(url, params=params)
-    data = r.json()
+    res = requests.get(url)
+    data = res.json()
 
-    reviews = []
+    reviews = data.get("result", {}).get("reviews", [])
 
-    for r in data.get("reviews", []):
-        reviews.append({
-            "review_id": r.get("review_id"),
-            "rating": r.get("rating"),
-            "comment": r.get("snippet"),
-            "reviewer_name": r.get("user", {}).get("name"),
-            "time": r.get("date")
-        })
+    db = SessionLocal()
 
-    return reviews
+    for r in reviews:
+        review = Review(
+            reviewer_name=r.get("author_name"),
+            comment=r.get("text"),
+            rating=r.get("rating"),
+        )
+        db.add(review)
+
+    db.commit()
+    db.close()
