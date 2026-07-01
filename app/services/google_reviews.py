@@ -15,7 +15,10 @@ def fetch_and_save_reviews():
     res = requests.get(url)
     data = res.json()
 
+    print("🔥 APIレスポンス:", data)
     reviews = data.get("result", {}).get("reviews", [])
+
+    print("🔥 reviews:", reviews)
 
     db = SessionLocal()
 
