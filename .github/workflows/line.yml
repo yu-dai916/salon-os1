@@ -25,8 +25,12 @@ jobs:
         env:
           LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PLACE_ID: ${{ secrets.PLACE_ID }}
         run: |
           echo "🔥 START"
           echo "🔥 DATABASE_URL(env) = $DATABASE_URL"
+          echo "🔥 GOOGLE_API_KEY(env) = $GOOGLE_API_KEY"
+          echo "🔥 PLACE_ID(env) = $PLACE_ID"
           python -m app.scheduler.jobs.line_task_job
           echo "🔥 END"
