@@ -24,6 +24,7 @@ def fetch_and_save_reviews():
 
     for r in reviews:
         review = Review(
+            store_id=1,
             reviewer_name=r.get("author_name"),
             comment=r.get("text"),
             rating=r.get("rating"),
