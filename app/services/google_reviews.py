@@ -11,6 +11,10 @@ PLACE_ID = os.getenv("PLACE_ID")
 
 
 def fetch_and_save_reviews():
+    def fetch_and_save_reviews():
+    print("🔥🔥🔥 NEW GOOGLE REVIEWS CODE 🔥🔥🔥")  # ←ここ🔥
+
+    url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={PLACE_ID}&fields=reviews&key={API_KEY}"
     url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={PLACE_ID}&fields=reviews&key={API_KEY}"
 
     res = requests.get(url)
