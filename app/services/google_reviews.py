@@ -26,16 +26,6 @@ def fetch_and_save_reviews():
         for r in reviews:
             print("🔥 INSERTする:", r.get("author_name"))
 
-            # 🔥 重複チェック（コメントで判定）
-            exists = db.query(Review).filter(
-                Review.comment == r.get("text")
-            ).first()
-
-            if exists:
-                print("⏩ スキップ:", r.get("author_name"))
-                continue
-
-            # 🔥 DB保存
             review = Review(
                 store_id=1,
                 reviewer_name=r.get("author_name"),
