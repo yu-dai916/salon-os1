@@ -1,5 +1,6 @@
 import requests
 import os
+import uuid
 
 from app.db.session import SessionLocal
 from app.models.review import Review
@@ -27,6 +28,7 @@ def fetch_and_save_reviews():
             print("🔥 INSERTする:", r.get("author_name"))
 
             review = Review(
+                id=uuid.uuid4().int >> 64,  # 🔥 これが今回の核心（ID手動付与）
                 store_id=1,
                 reviewer_name=r.get("author_name"),
                 comment=r.get("text"),
