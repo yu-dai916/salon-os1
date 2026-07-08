@@ -16,28 +16,41 @@ def fetch_and_save_reviews():
     data = res.json()
 
     print("🔥 APIレスポンス:", data)
-    reviews = data.get("result", {}).get("reviews", [])
 
+    reviews = data.get("result", {}).get("reviews", [])
     print("🔥 reviews:", reviews)
 
     db = SessionLocal()
 
-    for r in reviews:
-    exists = db.query(Review).filter(
-        Review.comment == r.get("text")
-    ).first()
+    try:
+        for r in reviews:
+            print("🔥 INSERTする:", r.get("author_name"))
 
-    if exists:
-        continue
+            # 🔥 重複チェック（コメントで判定）
+            exists = db.query(Review).filter(
+                Review.comment == r.get("text")
+            ).first()
 
-    review = Review(
-        store_id=1,
-        reviewer_name=r.get("author_name"),
-        comment=r.get("text"),
-        rating=r.get("rating"),
-    )
+            if exists:
+                print("⏩ スキップ:", r.get("author_name"))
+                continue
 
-    db.add(review)
+            # 🔥 DB保存
+            review = Review(
+                store_id=1,
+                reviewer_name=r.get("author_name"),
+                comment=r.get("text"),
+                rating=r.get("rating"),
+            )
 
-db.commit()
-db.close()
+            db.add(review)
+
+        db.commit()
+        print("✅ DB保存完了")
+
+    except Exception as e:
+        print("❌ DBエラー:", e)
+        db.rollback()
+
+    finally:
+        db.close()
