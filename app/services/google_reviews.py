@@ -23,13 +23,21 @@ def fetch_and_save_reviews():
     db = SessionLocal()
 
     for r in reviews:
-        review = Review(
-            store_id=1,
-            reviewer_name=r.get("author_name"),
-            comment=r.get("text"),
-            rating=r.get("rating"),
-        )
-        db.add(review)
+    exists = db.query(Review).filter(
+        Review.comment == r.get("text")
+    ).first()
 
-    db.commit()
-    db.close()
+    if exists:
+        continue
+
+    review = Review(
+        store_id=1,
+        reviewer_name=r.get("author_name"),
+        comment=r.get("text"),
+        rating=r.get("rating"),
+    )
+
+    db.add(review)
+
+db.commit()
+db.close()
