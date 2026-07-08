@@ -11,11 +11,24 @@ API_KEY = os.getenv("GOOGLE_API_KEY")
 
 
 def fetch_and_save_reviews():
+<<<<<<< HEAD
     print("🔥🔥🔥 ALL STORES MODE 🔥🔥🔥")
+=======
+    url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={PLACE_ID}&fields=reviews&key={API_KEY}"
+
+    res = requests.get(url)
+    data = res.json()
+
+    print("🔥 APIレスポンス:", data)
+
+    reviews = data.get("result", {}).get("reviews", [])
+    print("🔥 reviews:", reviews)
+>>>>>>> 0210dfe (fix reviews logic)
 
     db = SessionLocal()
     results = []
 
+<<<<<<< HEAD
     try:
         stores = db.query(Store).all()
         print("🔥 STORES:", stores)
@@ -78,6 +91,34 @@ def fetch_and_save_reviews():
             )
 
         db.commit()
+=======
+
+    try:
+        for r in reviews:
+            print("🔥 INSERTする:", r.get("author_name"))
+
+            # 🔥 重複チェック
+            exists = db.query(Review).filter(
+                Review.comment == r.get("text")
+            ).first()
+
+            if exists:
+                print("⏩ スキップ:", r.get("author_name"))
+                continue
+
+            # 🔥 保存
+            review = Review(
+                store_id=1,
+                reviewer_name=r.get("author_name"),
+                comment=r.get("text"),
+                rating=r.get("rating"),
+            )
+
+            db.add(review)
+
+        db.commit()
+        print("✅ DB保存完了")
+>>>>>>> 0210dfe (fix reviews logic)
 
     except Exception as e:
         print("❌ DBエラー:", e)
@@ -85,6 +126,7 @@ def fetch_and_save_reviews():
 
     finally:
         db.close()
+<<<<<<< HEAD
 
     print("🔥 results:", results)
     return results
@@ -92,3 +134,6 @@ def fetch_and_save_reviews():
     print("🔥 results:", results)
 
     return results
+=======
+>>>>>>> 42b6dd4 (final fix reviews)
+>>>>>>> 0210dfe (fix reviews logic)
