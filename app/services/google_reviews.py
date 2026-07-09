@@ -25,7 +25,7 @@ def fetch_and_save_reviews():
 
     db = SessionLocal()
 
-    new_count = 0  # 新規カウント
+    new_count = 0
 
     try:
         for r in reviews:
@@ -54,15 +54,14 @@ def fetch_and_save_reviews():
             new_count += 1
 
         db.commit()
-
         print(f"✅ 新規レビュー: {new_count}件")
 
     except Exception as e:
         print("❌ DBエラー:", e)
         db.rollback()
-        new_count = 0  # エラー時は0扱い
+        new_count = 0
 
     finally:
         db.close()
 
-    return new_count  # 🔥 これ追加（超重要）
+    return new_count
