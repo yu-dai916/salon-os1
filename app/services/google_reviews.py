@@ -11,7 +11,7 @@ PLACE_ID = os.getenv("PLACE_ID")
 
 
 def fetch_and_save_reviews():
-    print("🔥🔥🔥 NEW GOOGLE REVIEWS CODE 🔥🔥🔥")  # ←ここ🔥
+    print("🔥🔥🔥 NEW GOOGLE REVIEWS CODE 🔥🔥🔥")
 
     url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={PLACE_ID}&fields=reviews&key={API_KEY}"
 
@@ -30,7 +30,7 @@ def fetch_and_save_reviews():
             print("🔥 INSERTする:", r.get("author_name"))
 
             review = Review(
-                id=uuid.uuid4().int >> 64,  # 🔥 これが今回の核心（ID手動付与）
+                id=uuid.uuid4().int % (2**63 - 1),  # 🔥 bigint対応
                 store_id=1,
                 reviewer_name=r.get("author_name"),
                 comment=r.get("text"),
