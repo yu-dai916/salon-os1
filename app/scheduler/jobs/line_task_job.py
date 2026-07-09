@@ -2,26 +2,27 @@ def run():
     import os
 
     from app.services.google_reviews import fetch_and_save_reviews
-    fetch_and_save_reviews()  # ←これ追加🔥
-
-    # 🔥 env確認
-    print("🔥 DATABASE_URL (env) =", os.getenv("DATABASE_URL"))
-    print("🔥 NEW VERSION 🔥")
-
-    import app.db.session
-    print("🔥 実際に読まれてるパス:", app.db.session.__file__)
-
     from app.db.session import SessionLocal
     from app.models.review import Review
     from app.services.line_notify import send_line
 
+    print("🔥 DATABASE_URL =", os.getenv("DATABASE_URL"))
+    print("🔥 NEW VERSION 🔥")
+
     db = SessionLocal()
 
     try:
-        count = db.query(Review).count()
-        msg = f"DB接続OK：レビュー {count} 件"
+        # 🔥 新規取得
+        new_count = fetch_and_save_reviews()
+
+        # 🔥 合計件数
+        total_count = db.query(Review).count()
+
+        # 🔥 メッセージ
+        msg = f"🆕 新規口コミ {new_count}件（合計 {total_count}件）"
+
     except Exception as e:
-        msg = f"DBエラー: {e}"
+        msg = f"❌ エラー: {e}"
 
     print("🔥 送信メッセージ:", msg)
 
