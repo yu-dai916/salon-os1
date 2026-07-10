@@ -7,19 +7,24 @@ def run():
     from app.services.line_notify import send_line
 
     print("🔥 DATABASE_URL =", os.getenv("DATABASE_URL"))
-    print("🔥 NEW VERSION 🔥")
+    print("🔥 ALL STORES MODE 🔥")
 
     db = SessionLocal()
 
     try:
-        # 🔥 新規取得
-        new_count = fetch_and_save_reviews()
+        # 🔥 全店舗の口コミ取得
+        results = fetch_and_save_reviews()
 
         # 🔥 合計件数
         total_count = db.query(Review).count()
 
-        # 🔥 メッセージ
-        msg = f"🆕 新規口コミ {new_count}件（合計 {total_count}件）"
+        # 🔥 メッセージ作成
+        msg = "📊 本日の口コミ状況\n\n"
+
+        for r in results:
+            msg += f"【{r['store']}】\n🆕 新規口コミ {r['new_count']}件\n\n"
+
+        msg += f"📈 合計口コミ数：{total_count}件"
 
     except Exception as e:
         msg = f"❌ エラー: {e}"
