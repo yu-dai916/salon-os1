@@ -4,7 +4,7 @@ import uuid
 
 from app.db.session import SessionLocal
 from app.models.review import Review
-from app.models.store import Store  # ←追加
+from app.models.store import Store
 
 
 API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -14,11 +14,12 @@ def fetch_and_save_reviews():
     print("🔥🔥🔥 ALL STORES MODE 🔥🔥🔥")
 
     db = SessionLocal()
-
     results = []
 
     try:
+        # 🔥 店舗取得
         stores = db.query(Store).all()
+        print("🔥 STORES:", stores)
 
         for store in stores:
             print(f"🏪 店舗: {store.name}")
@@ -28,7 +29,10 @@ def fetch_and_save_reviews():
             res = requests.get(url)
             data = res.json()
 
+            print("🔥 API:", data.get("status"))
+
             reviews = data.get("result", {}).get("reviews", [])
+            print(f"🔥 reviews数: {len(reviews)}")
 
             new_count = 0
 
@@ -44,7 +48,7 @@ def fetch_and_save_reviews():
 
                 review = Review(
                     id=uuid.uuid4().int % (2**63 - 1),
-                    store_id=store.id,  # ←ここが超重要
+                    store_id=store.id,
                     reviewer_name=r.get("author_name"),
                     comment=comment,
                     rating=r.get("rating"),
@@ -53,6 +57,7 @@ def fetch_and_save_reviews():
                 db.add(review)
                 new_count += 1
 
+            # 🔥 ここ重要
             results.append({
                 "store": store.name,
                 "new_count": new_count
@@ -66,5 +71,7 @@ def fetch_and_save_reviews():
 
     finally:
         db.close()
+
+    print("🔥 results:", results)
 
     return results
