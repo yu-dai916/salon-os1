@@ -6,19 +6,19 @@ def run():
     from app.models.review import Review
     from app.services.line_notify import send_line
 
+    print("🔥 START")
     print("🔥 DATABASE_URL =", os.getenv("DATABASE_URL"))
-    print("🔥 ALL STORES MODE 🔥")
 
     db = SessionLocal()
 
     try:
-        # 🔥 全店舗の口コミ取得
+        # 🔥 口コミ取得
         results = fetch_and_save_reviews()
 
-        # 🔥 合計件数
+        # 🔥 合計
         total_count = db.query(Review).count()
 
-        # 🔥 メッセージ作成
+        # 🔥 メッセージ
         msg = "📊 本日の口コミ状況\n\n"
 
         for r in results:
