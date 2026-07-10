@@ -4,64 +4,67 @@ import uuid
 
 from app.db.session import SessionLocal
 from app.models.review import Review
+from app.models.store import Store  # ←追加
 
 
 API_KEY = os.getenv("GOOGLE_API_KEY")
-PLACE_ID = os.getenv("PLACE_ID")
 
 
 def fetch_and_save_reviews():
-    print("🔥🔥🔥 NEW GOOGLE REVIEWS CODE 🔥🔥🔥")
-
-    url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={PLACE_ID}&fields=reviews&key={API_KEY}"
-
-    res = requests.get(url)
-    data = res.json()
-
-    print("🔥 APIレスポンス:", data)
-
-    reviews = data.get("result", {}).get("reviews", [])
-    print("🔥 reviews:", reviews)
+    print("🔥🔥🔥 ALL STORES MODE 🔥🔥🔥")
 
     db = SessionLocal()
 
-    new_count = 0
+    results = []
 
     try:
-        for r in reviews:
-            comment = r.get("text")
+        stores = db.query(Store).all()
 
-            # 🔥 重複チェック
-            exists = db.query(Review).filter(
-                Review.comment == comment
-            ).first()
+        for store in stores:
+            print(f"🏪 店舗: {store.name}")
 
-            if exists:
-                print("⏩ スキップ:", r.get("author_name"))
-                continue
+            url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={store.place_id}&fields=reviews&key={API_KEY}"
 
-            print("🔥 INSERTする:", r.get("author_name"))
+            res = requests.get(url)
+            data = res.json()
 
-            review = Review(
-                id=uuid.uuid4().int % (2**63 - 1),
-                store_id=1,
-                reviewer_name=r.get("author_name"),
-                comment=comment,
-                rating=r.get("rating"),
-            )
+            reviews = data.get("result", {}).get("reviews", [])
 
-            db.add(review)
-            new_count += 1
+            new_count = 0
+
+            for r in reviews:
+                comment = r.get("text")
+
+                exists = db.query(Review).filter(
+                    Review.comment == comment
+                ).first()
+
+                if exists:
+                    continue
+
+                review = Review(
+                    id=uuid.uuid4().int % (2**63 - 1),
+                    store_id=store.id,  # ←ここが超重要
+                    reviewer_name=r.get("author_name"),
+                    comment=comment,
+                    rating=r.get("rating"),
+                )
+
+                db.add(review)
+                new_count += 1
+
+            results.append({
+                "store": store.name,
+                "new_count": new_count
+            })
 
         db.commit()
-        print(f"✅ 新規レビュー: {new_count}件")
 
     except Exception as e:
         print("❌ DBエラー:", e)
         db.rollback()
-        new_count = 0
 
     finally:
         db.close()
 
-    return new_count
+    return results
