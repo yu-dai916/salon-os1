@@ -12,13 +12,13 @@ def run():
     db = SessionLocal()
 
     try:
-        # 🔥 口コミ取得
+        # 🔥 全店舗処理
         results = fetch_and_save_reviews()
 
-        # 🔥 合計
+        # 🔥 合計件数
         total_count = db.query(Review).count()
 
-        # 🔥 メッセージ
+        # 🔥 LINEメッセージ
         msg = "📊 本日の口コミ状況\n\n"
 
         for r in results:
