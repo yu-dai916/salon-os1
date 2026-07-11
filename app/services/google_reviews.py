@@ -17,7 +17,6 @@ def fetch_and_save_reviews():
     results = []
 
     try:
-        # 🔥 店舗取得
         stores = db.query(Store).all()
         print("🔥 STORES:", stores)
 
@@ -39,12 +38,18 @@ def fetch_and_save_reviews():
             for r in reviews:
                 comment = r.get("text")
 
+                # 🔥 擬似ID作成（ここが核心）
+                google_review_id = f"{r.get('author_name')}_{r.get('time')}"
+
+                # 🔥 重複チェック（ここ重要）
                 exists = db.query(Review).filter(
-                    Review.comment == comment
+                    Review.google_review_id == google_review_id
                 ).first()
 
                 if exists:
                     continue
+
+                print("🔥 INSERT:", r.get("author_name"))
 
                 review = Review(
                     id=uuid.uuid4().int % (2**63 - 1),
@@ -52,12 +57,12 @@ def fetch_and_save_reviews():
                     reviewer_name=r.get("author_name"),
                     comment=comment,
                     rating=r.get("rating"),
+                    google_review_id=google_review_id  # ←追加
                 )
 
                 db.add(review)
                 new_count += 1
 
-            # 🔥 ここ重要
             results.append({
                 "store": store.name,
                 "new_count": new_count
