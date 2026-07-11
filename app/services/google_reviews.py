@@ -38,10 +38,10 @@ def fetch_and_save_reviews():
             for r in reviews:
                 comment = r.get("text")
 
-                # 🔥 擬似ID作成（ここが核心）
-                google_review_id = f"{r.get('author_name')}_{r.get('time')}"
+                # 🔥 安定ID（修正ポイント）
+                google_review_id = f"{r.get('author_name')}_{comment}"
 
-                # 🔥 重複チェック（ここ重要）
+                # 🔥 重複チェック
                 exists = db.query(Review).filter(
                     Review.google_review_id == google_review_id
                 ).first()
@@ -57,7 +57,7 @@ def fetch_and_save_reviews():
                     reviewer_name=r.get("author_name"),
                     comment=comment,
                     rating=r.get("rating"),
-                    google_review_id=google_review_id  # ←追加
+                    google_review_id=google_review_id
                 )
 
                 db.add(review)
