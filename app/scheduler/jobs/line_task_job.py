@@ -18,7 +18,7 @@ def run():
         # 🔥 合計件数
         total_count = db.query(Review).count()
 
-        # 🔥 LINEメッセージ
+        # 🔥 メッセージ
         msg = "📊 本日の口コミ状況\n\n"
 
         for r in results:
