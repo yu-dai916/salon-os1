@@ -10,13 +10,6 @@ from app.models.store import Store
 API_KEY = os.getenv("GOOGLE_API_KEY")
 
 
-# 🔥 文字列を安定化させる（これが今回の核心）
-def normalize_text(text):
-    if not text:
-        return ""
-    return text.strip().replace("\n", "").replace(" ", "")
-
-
 def fetch_and_save_reviews():
     print("🔥🔥🔥 ALL STORES MODE 🔥🔥🔥")
 
@@ -45,14 +38,11 @@ def fetch_and_save_reviews():
             for r in reviews:
                 comment = r.get("text")
                 reviewer = r.get("author_name")
+                review_time = r.get("time")
 
-                # 🔥 正規化（ここが重要）
-                normalized_comment = normalize_text(comment)
+                # 🔥 最強のID（ここが核心）
+                google_review_id = f"{reviewer}_{review_time}"
 
-                # 🔥 擬似ID（安定版）
-                google_review_id = f"{reviewer}_{normalized_comment}"
-
-                # 🔥 重複チェック
                 exists = db.query(Review).filter(
                     Review.google_review_id == google_review_id
                 ).first()
