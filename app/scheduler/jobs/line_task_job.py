@@ -15,63 +15,54 @@ def run():
     db = SessionLocal()
 
     try:
-        # 🔥 全店舗レビュー取得
-        results = fetch_and_save_reviews()
+        # 🔥 ① 最新レビュー取得（DB更新）
+        fetch_and_save_reviews()
 
-        # 🔥 合計口コミ数
-        total_count = db.query(Review).count()
+        # 🔥 ② 全店舗取得
+        stores = db.query(Store).all()
 
-        # 🔥 店舗ごとに通知
-        for r in results:
-            store_name = r["store"]
-            new_count = r["new_count"]
+        for store in stores:
+            store_name = store.name
 
-            # 🔥 変化ない店は送らない（重要）
-            if new_count == 0:
-                continue
+            # 🔥 ③ ★1・★2 & 未返信のみ取得
+            bad_reviews = db.query(Review).filter(
+                Review.store_id == store.id,
+                Review.rating <= 2,
+                Review.reply_text.is_(None)
+            ).all()
 
-            # 🔥 店舗取得
-            store = db.query(Store).filter(
-                Store.name == store_name
-            ).first()
+            if not bad_reviews:
+                continue  # 🔥 無ければスキップ
 
-            if not store:
-                print(f"❌ 店舗見つからん: {store_name}")
-                continue
+            print(f"🚨 {store_name} 危険レビューあり: {len(bad_reviews)}件")
 
-            # 🔥 店舗に紐づくユーザー取得
+            # 🔥 ④ 店舗に紐づくユーザー取得
             store_users = db.query(StoreUser).filter(
                 StoreUser.store_id == store.id
             ).all()
 
-            print(f"🏪 {store_name} → users: {store_users}")
-
             for su in store_users:
-                # 🔥 UserテーブルからLINE ID取得
                 user = db.query(User).filter(
                     User.id == su.user_id
                 ).first()
 
-                if not user:
-                    print("❌ Userなし")
+                if not user or not user.line_user_id:
                     continue
 
-                if not user.line_user_id:
-                    print("❌ LINE IDなし")
-                    continue
+                # 🔥 ⑤ レビューごとに送信
+                for br in bad_reviews:
+                    msg = f"""🚨【{store_name}】
 
-                # 🔥 送信メッセージ
-                msg = f"""📊 本日の口コミ状況
+★{br.rating}の口コミあり
 
-【{store_name}】
-🆕 新規口コミ {new_count}件
+「{(br.comment or '')[:50]}」
 
-📈 合計口コミ数：{total_count}件
+👉 すぐ返信してください
 """
 
-                print(f"🔥 SEND → {store_name} → {user.line_user_id}")
+                    print(f"🔥 SEND → {store_name} → {user.line_user_id}")
 
-                send_line(msg, user.line_user_id)
+                    send_line(msg, user.line_user_id)
 
     except Exception as e:
         print("❌ エラー:", e)
