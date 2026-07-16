@@ -1212,47 +1212,69 @@ async def line_test(request: Request):
             )
 
     elif text.startswith("登録"):
-        parts = text.split()
 
-        if len(parts) < 2:
-            send_line_message(user_id, "❌ 店舗コードを入力してください\n例：登録 001")
-            db.close()
-            return {"ok": True}
+    # 全角スペース→半角
+    text = text.replace("　", " ").strip()
 
-        store_code = parts[1]
+    # 全角数字→半角数字
+    text = text.translate(
+        str.maketrans("０１２３４５６７８９", "0123456789")
+    )
 
-        store = db.query(Store).filter(
-            Store.store_code == store_code
+    parts = text.split()
+
+    if len(parts) < 2:
+        send_line_message(
+            user_id,
+            "❌ 店舗コードを入力してください\n例：登録 0001"
+        )
+        db.close()
+        return {"ok": True}
+
+    store_code = parts[1].strip()
+
+    # 1 → 0001
+    if store_code.isdigit():
+        store_code = store_code.zfill(4)
+
+    print("🔥 入力コード =", store_code)
+
+    store = db.query(Store).filter(
+        Store.store_code == store_code
+    ).first()
+
+    if store:
+
+        exists = db.query(StoreUser).filter(
+            StoreUser.store_id == store.id,
+            StoreUser.user_id == user.id
         ).first()
 
-        if store:
-            exists = db.query(StoreUser).filter(
-                StoreUser.store_id == store.id,
-                StoreUser.user_id == user.id
-            ).first()
-
-            if not exists:
-                link = StoreUser(
-                    store_id=store.id,
-                    user_id=user.id
-                )
-                db.add(link)
-                db.commit()
-
-                send_line_message(
-                    user_id,
-                    f"✅ 登録完了\n{store.name} を通知対象にしました"
-                )
-            else:
-                send_line_message(
-                    user_id,
-                    f"⚠ すでに登録済み\n{store.name}"
-                )
-        else:
+        if exists:
             send_line_message(
                 user_id,
-                "❌ 店舗コードが違います\n「登録 一覧」で確認できます"
+                f"⚠️ すでに登録済み\n{store.name}"
             )
+
+        else:
+            link = StoreUser(
+                store_id=store.id,
+                user_id=user.id
+            )
+
+            db.add(link)
+            db.commit()
+
+            send_line_message(
+                user_id,
+                f"✅ 登録完了\n{store.name} を通知対象にしました"
+            )
+
+    else:
+        send_line_message(
+            user_id,
+            f"❌ 店舗コードが違います\n入力コード：{store_code}"
+        )
 
     db.close()
     return {"ok": True}
