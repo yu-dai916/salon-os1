@@ -14,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
-
+from app.db import Base, engine, SessionLocal, get_db
 from app.db import SessionLocal, get_db
 
 # =========================
