@@ -1143,7 +1143,7 @@ async def line_test(request: Request):
         User.line_user_id == user_id
     ).first()
 
-       if not user:
+    if not user:
         user = User(line_user_id=user_id)
         db.add(user)
         db.commit()
