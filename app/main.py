@@ -122,8 +122,13 @@ async def fake_auth(request: Request, call_next):
         return await call_next(request)
 
     # loginとdocsはスルー
-    if path.startswith("/login") or path.startswith("/docs") or path.startswith("/openapi"):
-        return await call_next(request)
+    if (
+    path.startswith("/login")
+    or path.startswith("/docs")
+    or path.startswith("/openapi")
+    or path.startswith("/seed")
+):
+    return await call_next(request)
 
     org_id = request.cookies.get("org_id")
 
