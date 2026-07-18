@@ -118,17 +118,17 @@ async def fake_auth(request: Request, call_next):
     if path.startswith("/admin"):
         return await call_next(request)
 
-    if path.startswith("/line"):
+      if path.startswith("/line"):
         return await call_next(request)
 
-    # loginとdocsはスルー
+    # login・docs・seedはスルー
     if (
-    path.startswith("/login")
-    or path.startswith("/docs")
-    or path.startswith("/openapi")
-    or path.startswith("/seed")
-):
-    return await call_next(request)
+        path.startswith("/login")
+        or path.startswith("/docs")
+        or path.startswith("/openapi")
+        or path.startswith("/seed")
+    ):
+        return await call_next(request)
 
     org_id = request.cookies.get("org_id")
 
