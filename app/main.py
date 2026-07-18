@@ -1124,7 +1124,7 @@ def seed_demo(db: Session = Depends(get_db)):
     }
 from fastapi import Request
 from app.db import SessionLocal
-from app.models.store import Store
+#from app.models.store import Store
 from app.models.user import User
 from app.models.store_user import StoreUser
 
