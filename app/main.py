@@ -111,24 +111,31 @@ app.include_router(admin_router)
 app.include_router(hq_dashboard_router)
 @app.middleware("http")
 async def fake_auth(request: Request, call_next):
-
     path = request.url.path
 
-    # 🔥 ここ追加（adminスキップ）
-    if path.startswith("/admin"):
-        return await call_next(request)
-
-      if path.startswith("/line"):
-        return await call_next(request)
-
-    # login・docs・seedはスルー
+    # 認証不要
     if (
         path.startswith("/login")
         or path.startswith("/docs")
         or path.startswith("/openapi")
+        or path.startswith("/line")
         or path.startswith("/seed")
+        or path.startswith("/health")
     ):
         return await call_next(request)
+
+    org_id = request.cookies.get("org_id")
+
+    if not org_id:
+        return RedirectResponse("/login")
+
+    request.state.user = {
+        "user_id": 1,
+        "org_id": int(org_id),
+        "role": "HQ_ADMIN",
+    }
+
+    return await call_next(request)
 
     org_id = request.cookies.get("org_id")
 
