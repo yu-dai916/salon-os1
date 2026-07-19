@@ -928,12 +928,18 @@ def competitors(keyword: str):
 def seed_demo(db: Session = Depends(get_db)):
     # 既存デモ店舗があれば消す
     demo_codes = ["demo-sakai", "demo-fukai", "demo-otsu"]
-　　　print("Store class:", Store)
-　　　print("Store module:", Store.__module__)
-　　　print("Store attrs:", [c.name for c in Store.__table__.columns])
-    existing_stores = db.query(Store).filter(Store.store_code.in_(demo_codes)).all()
-    existing_store_ids = [s.id for s in existing_stores]
 
+    print("Store class:", Store)
+    print("Store module:", Store.__module__)
+    print("Store attrs:", [c.name for c in Store.__table__.columns])
+
+    existing_stores = (
+        db.query(Store)
+        .filter(Store.store_code.in_(demo_codes))
+        .all()
+    )
+
+    existing_store_ids = [s.id for s in existing_stores]
     if existing_store_ids:
         db.query(Review).filter(Review.store_id.in_(existing_store_ids)).delete(synchronize_session=False)
         db.query(Post).filter(Post.store_id.in_(existing_store_ids)).delete(synchronize_session=False)
