@@ -20,6 +20,8 @@ from app.db import SessionLocal, get_db
 # =========================
 # ルーター
 # =========================
+from app.db import Base, engine, SessionLocal, get_db
+from app.models import Store
 from app.routers.dashboard import router as dashboard_router
 from app.routers.tasks import router as tasks_router
 from app.routers.review_replies import router as review_reply_router
@@ -926,10 +928,6 @@ def competitors(keyword: str):
 def seed_demo(db: Session = Depends(get_db)):
     # 既存デモ店舗があれば消す
     demo_codes = ["demo-sakai", "demo-fukai", "demo-otsu"]
-
-    print(Store)
-    print(Store.__module__)
-    print(Store.__dict__.keys())
 
     existing_stores = db.query(Store).filter(Store.store_code.in_(demo_codes)).all()
     existing_store_ids = [s.id for s in existing_stores]
