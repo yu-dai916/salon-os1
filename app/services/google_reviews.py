@@ -1,6 +1,6 @@
-import requests
 import os
 import uuid
+import requests
 
 from app.db.session import SessionLocal
 from app.models.review import Review
@@ -21,9 +21,16 @@ def fetch_and_save_reviews():
         print("🔥 STORES:", stores)
 
         for store in stores:
+            if not store.place_id:
+                print(f"⏩ {store.name}: place_idなし")
+                continue
+
             print(f"🏪 店舗: {store.name}")
 
-            url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={store.place_id}&fields=reviews&key={API_KEY}"
+            url = (
+                "https://maps.googleapis.com/maps/api/place/details/json"
+                f"?place_id={store.place_id}&fields=reviews&key={API_KEY}"
+            )
 
             res = requests.get(url)
             data = res.json()
@@ -36,21 +43,20 @@ def fetch_and_save_reviews():
             new_count = 0
 
             for r in reviews:
-                comment = r.get("text")
                 reviewer = r.get("author_name")
+                comment = r.get("text")
                 review_time = r.get("time")
 
-                # 🔥 最強のID（ここが核心）
                 google_review_id = f"{reviewer}_{review_time}"
 
-                exists = db.query(Review).filter(
-                    Review.google_review_id == google_review_id
-                ).first()
+                exists = (
+                    db.query(Review)
+                    .filter(Review.google_review_id == google_review_id)
+                    .first()
+                )
 
                 if exists:
                     continue
-
-                print("🔥 INSERT:", reviewer)
 
                 review = Review(
                     id=uuid.uuid4().int % (2**63 - 1),
@@ -58,16 +64,18 @@ def fetch_and_save_reviews():
                     reviewer_name=reviewer,
                     comment=comment,
                     rating=r.get("rating"),
-                    google_review_id=google_review_id
+                    google_review_id=google_review_id,
                 )
 
                 db.add(review)
                 new_count += 1
 
-            results.append({
-                "store": store.name,
-                "new_count": new_count
-            })
+            results.append(
+                {
+                    "store": store.name,
+                    "new_count": new_count,
+                }
+            )
 
         db.commit()
 
@@ -77,6 +85,9 @@ def fetch_and_save_reviews():
 
     finally:
         db.close()
+
+    print("🔥 results:", results)
+    return results
 
     print("🔥 results:", results)
 
