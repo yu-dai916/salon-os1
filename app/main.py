@@ -22,6 +22,7 @@ from app.db import SessionLocal, get_db
 # =========================
 from app.db import Base, engine, SessionLocal, get_db
 from app.models import Store
+from app.models.metric import Metric
 from app.routers.dashboard import router as dashboard_router
 from app.routers.tasks import router as tasks_router
 from app.routers.review_replies import router as review_reply_router
