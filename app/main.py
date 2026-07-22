@@ -27,7 +27,6 @@ from app.models.task import Task
 from app.models.user import User
 from app.models.store_user import StoreUser
 from app.models.org import Org
-from app.models.competitor import Competitor
 from app.models.action_log import ActionLog
 from app.models_metrics import Metric
 
