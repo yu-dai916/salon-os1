@@ -16,7 +16,19 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from app.db import Base, engine, SessionLocal, get_db
-from app.models import Store
+
+# =========================
+# モデル
+# =========================
+from app.models.store import Store
+from app.models.review import Review
+from app.models.post import Post
+from app.models.task import Task
+from app.models.user import User
+from app.models.store_user import StoreUser
+from app.models.org import Org
+from app.models.competitor import Competitor
+from app.models.action_log import ActionLog
 from app.models_metrics import Metric
 
 # =========================
@@ -50,6 +62,7 @@ from app.routers.store_reviews import router as store_reviews_router
 from app.routers.store_posts import router as store_posts_router
 from app.routers.task_simple import router as task_simple_router
 from app.routers.store_dashboard_test import router as test_router
+
 from app.api.post import router as post_router
 from app.api.admin import router as admin_router
 from app.routers.hq_dashboard import router as hq_dashboard_router
