@@ -30,6 +30,7 @@ from app.models.org import Org
 from app.models.action_log import ActionLog
 from app.models_metrics import Metric
 
+from app.services.store_task_generator import generate_tasks
 # =========================
 # ルーター
 # =========================
